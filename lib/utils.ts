@@ -1,18 +1,22 @@
+import { getLocale } from "@/lib/i18n";
+import type { Language } from "@/types/app";
+
 export function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(value: number, language: Language = "th") {
+  return new Intl.NumberFormat(getLocale(language), {
     style: "currency",
-    currency: "USD",
+    currency: "THB",
+    currencyDisplay: "narrowSymbol",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(value);
 }
 
-export function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatDate(value: string, language: Language = "th") {
+  return new Intl.DateTimeFormat(getLocale(language), {
     month: "short",
     day: "numeric",
     year: "numeric"

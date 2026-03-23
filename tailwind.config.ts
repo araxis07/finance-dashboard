@@ -31,8 +31,22 @@ const config: Config = {
         "2xl": "1.5rem"
       },
       fontFamily: {
-        sans: ["Avenir Next", "Segoe UI", "Helvetica Neue", "sans-serif"],
-        display: ["Avenir Next", "Segoe UI", "Helvetica Neue", "sans-serif"]
+        sans: [
+          "Noto Sans Thai",
+          "Noto Sans JP",
+          "Avenir Next",
+          "Segoe UI",
+          "Helvetica Neue",
+          "sans-serif"
+        ],
+        display: [
+          "Noto Sans Thai",
+          "Noto Sans JP",
+          "Avenir Next",
+          "Segoe UI",
+          "Helvetica Neue",
+          "sans-serif"
+        ]
       },
       keyframes: {
         "fade-up": {

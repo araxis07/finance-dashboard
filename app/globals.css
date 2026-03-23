@@ -4,6 +4,10 @@
 
 :root {
   color-scheme: light;
+  --page-noise:
+    radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.15), transparent 24%),
+    radial-gradient(circle at 80% 0%, rgba(20, 184, 166, 0.14), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(245, 158, 11, 0.08), transparent 22%);
 }
 
 * {
@@ -18,14 +22,20 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.14), transparent 26%),
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 28%),
-    linear-gradient(180deg, #f8fbff 0%, #f4f7fb 45%, #eef3fa 100%);
+    var(--page-noise),
+    linear-gradient(180deg, #f8fbff 0%, #f4f7fb 40%, #edf3fb 100%);
+  background-attachment: fixed;
   color: #14213d;
-  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+  font-family:
+    "Noto Sans Thai",
+    "Noto Sans JP",
+    "Avenir Next",
+    "Segoe UI",
+    "Helvetica Neue",
+    sans-serif;
 }
 
-body::selection {
+::selection {
   background: rgba(37, 99, 235, 0.2);
 }
 
@@ -36,8 +46,17 @@ a {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
 }
 
 ::-webkit-scrollbar {
@@ -53,9 +72,20 @@ select {
   border-radius: 999px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @layer components {
   .panel {
-    @apply rounded-2xl border border-white/70 bg-panel/90 shadow-card backdrop-blur;
+    @apply rounded-[1.75rem] border border-white/70 bg-panel/90 shadow-card backdrop-blur;
   }
 
   .field-label {
@@ -63,6 +93,6 @@ select {
   }
 
   .field-input {
-    @apply h-12 w-full rounded-xl border border-stroke bg-white px-4 text-sm text-ink outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10;
+    @apply h-12 w-full rounded-[1rem] border border-stroke bg-white px-4 text-sm text-ink shadow-sm outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10;
   }
 }

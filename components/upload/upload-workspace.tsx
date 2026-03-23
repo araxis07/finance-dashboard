@@ -6,13 +6,24 @@ import {
   FileText,
   ImageIcon,
   ScanSearch,
-  UploadCloud
+  ShieldCheck,
+  UploadCloud,
+  WandSparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  getAccountLabel,
+  getCategoryLabel,
+  getPaymentMethodLabel,
+  getTransactionTypeLabel
+} from "@/lib/finance";
+import { getTranslation } from "@/lib/i18n";
 import { buildMockParsedResult } from "@/lib/mock-parser";
+import { usePreferencesStore } from "@/stores/use-preferences-store";
 import { formatCurrency, formatDate, formatFileSize } from "@/lib/utils";
+import type { Language } from "@/types/app";
 import type { MockParsedResult } from "@/types/finance";
 
 const acceptedTypes = [
@@ -23,6 +34,67 @@ const acceptedTypes = [
   "image/jpeg",
   "image/jpg"
 ];
+
+const uploadCopy: Record<
+  Language,
+  {
+    badge: string;
+    title: string;
+    description: string;
+    privacyTitle: string;
+    privacyDescription: string;
+    workflowTitle: string;
+    workflowDescription: string;
+    resultsTitle: string;
+    resultsDescription: string;
+  }
+> = {
+  th: {
+    badge: "Mock import studio",
+    title: "จัดหน้าอัปโหลดใหม่ให้เห็นขั้นตอนและผลลัพธ์ชัดขึ้น",
+    description:
+      "รองรับ statement, spreadsheet และ receipt image พร้อม mock parsing preview ที่จัดลำดับข้อมูลให้อ่านง่ายกว่าเดิม",
+    privacyTitle: "ข้อมูลไม่ออกจากเครื่อง",
+    privacyDescription:
+      "ไฟล์ทั้งหมดใช้เพื่อจำลองการแสดงผลบนหน้าเว็บเท่านั้น ไม่มี backend หรือบริการภายนอกเชื่อมต่ออยู่",
+    workflowTitle: "ลำดับการทำงานชัดเจนขึ้น",
+    workflowDescription:
+      "เริ่มจากลากไฟล์ เลือกตัวอย่าง หรือดูสรุป metadata ก่อน แล้วค่อยไล่อ่านรายการ parse ด้านล่าง",
+    resultsTitle: "ผลลัพธ์การแปลงข้อมูล",
+    resultsDescription:
+      "ตัวอย่างด้านล่างช่วยให้เห็นว่าแต่ละบรรทัดธุรกรรมจะถูกจัดหมวดและแสดงผลอย่างไร"
+  },
+  en: {
+    badge: "Mock import studio",
+    title: "A redesigned upload flow with clearer steps and results",
+    description:
+      "Supports statements, spreadsheets, and receipt images with a cleaner mock parsing preview and stronger information hierarchy.",
+    privacyTitle: "Nothing leaves the device",
+    privacyDescription:
+      "Every file is used only to simulate the interface. There is no backend or external parsing service connected here.",
+    workflowTitle: "A clearer sequence",
+    workflowDescription:
+      "Drop a file, load a sample, review the metadata summary, and then inspect the parsed transaction cards below.",
+    resultsTitle: "Parsed output preview",
+    resultsDescription:
+      "The result cards below show how each extracted transaction could be categorized and presented before import."
+  },
+  ja: {
+    badge: "Mock import studio",
+    title: "手順と結果が見やすいアップロード画面へ再設計",
+    description:
+      "明細書、スプレッドシート、レシート画像に対応し、モック解析プレビューをより読みやすい階層で表示します。",
+    privacyTitle: "データは端末外へ送信されません",
+    privacyDescription:
+      "ファイルはUI表示のシミュレーションにのみ使用され、バックエンドや外部解析サービスには送信されません。",
+    workflowTitle: "流れが明確な構成",
+    workflowDescription:
+      "ファイルをドロップするかサンプルを読み込み、メタデータを確認した後、下部の解析結果カードを確認できます。",
+    resultsTitle: "解析結果プレビュー",
+    resultsDescription:
+      "下部のカードで、抽出された各取引がどのように分類・表示されるかを確認できます。"
+  }
+};
 
 function isAcceptedFile(file: File) {
   return (
@@ -44,11 +116,14 @@ function getFileIcon(type: string) {
 }
 
 export function UploadWorkspace() {
+  const language = usePreferencesStore((state) => state.language);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [parsedResult, setParsedResult] = useState<MockParsedResult | null>(null);
+  const translation = getTranslation(language);
+  const copy = uploadCopy[language];
 
   const FileIcon = useMemo(
     () => getFileIcon(file?.type ?? "image/png"),
@@ -67,13 +142,20 @@ export function UploadWorkspace() {
     return () => URL.revokeObjectURL(objectUrl);
   }, [file]);
 
+  useEffect(() => {
+    if (!file) {
+      return;
+    }
+
+    setParsedResult(buildMockParsedResult(file.name, language));
+  }, [file, language]);
+
   function handleFileSelection(nextFile: File | null) {
     if (!nextFile || !isAcceptedFile(nextFile)) {
       return;
     }
 
     setFile(nextFile);
-    setParsedResult(buildMockParsedResult(nextFile.name));
   }
 
   function loadSamplePreview() {
@@ -91,162 +173,282 @@ export function UploadWorkspace() {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Drag and drop upload</CardTitle>
-          <p className="mt-1 text-sm text-muted">
-            Accepts PDF, Excel, and image files. Parsing is fully mocked for this UI.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div
-            className={`relative rounded-[1.75rem] border-2 border-dashed px-6 py-10 text-center transition duration-200 ${
-              isDragging
-                ? "border-accent bg-blue-50"
-                : "border-stroke bg-gradient-to-br from-slate-50 to-white"
-            }`}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={(event) => {
-              event.preventDefault();
-              setIsDragging(false);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={handleDrop}
-          >
-            <div className="mx-auto flex max-w-lg flex-col items-center">
-              <div className="animate-float rounded-[1.75rem] bg-white p-5 text-accent shadow-card">
-                <UploadCloud className="h-10 w-10" />
-              </div>
-              <h3 className="mt-6 text-2xl font-semibold text-ink">
-                Upload a statement or receipt
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-muted">
-                Drop a file here to simulate import parsing. This preview only
-                demonstrates the interface and does not send data anywhere.
-              </p>
+    <div className="space-y-6">
+      <section className="relative overflow-hidden rounded-[2.2rem] border border-white/60 bg-[linear-gradient(135deg,#13203b_0%,#1b315f_55%,#0d766e_100%)] p-6 text-white shadow-card sm:p-7">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-10 top-0 h-52 w-52 rounded-full bg-cyan-300/18 blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-blue-300/16 blur-3xl" />
+        </div>
 
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                {["PDF", "Excel", "PNG/JPG"].map((type) => (
-                  <span
-                    key={type}
-                    className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted shadow-sm"
-                  >
-                    {type}
-                  </span>
-                ))}
-              </div>
+        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.06fr)_minmax(0,0.94fr)]">
+          <div>
+            <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/76">
+              {copy.badge}
+            </div>
+            <h3 className="mt-5 max-w-3xl text-3xl font-semibold leading-tight md:text-4xl">
+              {copy.title}
+            </h3>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-white/74">
+              {copy.description}
+            </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button onClick={() => inputRef.current?.click()}>Choose file</Button>
-                <Button variant="ghost" onClick={loadSamplePreview}>
-                  Use sample workflow
-                </Button>
+            <div className="mt-7 flex flex-wrap gap-2">
+              {["PDF", "Excel", "PNG/JPG"].map((type) => (
+                <span
+                  key={type}
+                  className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80"
+                >
+                  {type}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-[1.6rem] border border-white/12 bg-white/10 p-5 backdrop-blur">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-emerald-300/15 p-3 text-emerald-100">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold">{copy.privacyTitle}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/68">
+                    {copy.privacyDescription}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <input
-              ref={inputRef}
-              type="file"
-              className="hidden"
-              accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg"
-              onChange={(event) =>
-                handleFileSelection(event.target.files?.[0] ?? null)
-              }
-            />
+            <div className="rounded-[1.6rem] border border-white/12 bg-white/10 p-5 backdrop-blur">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-blue-300/15 p-3 text-blue-100">
+                  <WandSparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold">{copy.workflowTitle}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/68">
+                    {copy.workflowDescription}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Mock parsed preview</CardTitle>
-          <p className="mt-1 text-sm text-muted">
-            Shows how extracted fields could be presented before import.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {!file || !parsedResult ? (
-            <EmptyState
-              icon={ScanSearch}
-              title="Nothing uploaded yet"
-              description="Drop a file to generate a mock parsing preview card with sample transactions and metadata."
-              className="min-h-[420px]"
-            />
-          ) : (
-            <div className="space-y-5">
-              <div className="rounded-2xl border border-stroke bg-slate-50/80 p-4">
-                <div className="flex items-start gap-4">
-                  <div className="rounded-2xl bg-white p-3 text-accent shadow-sm">
-                    <FileIcon className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                      <div>
-                        <p className="truncate font-semibold text-ink">{file.name}</p>
-                        <p className="mt-1 text-sm text-muted">
-                          {formatFileSize(file.size)} • {parsedResult.sourceLabel}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-income">
-                        Confidence {parsedResult.confidence}
-                      </span>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
+        <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(239,245,255,0.88))]">
+          <CardContent className="p-6">
+            <div
+              className={`relative rounded-[1.9rem] border-2 border-dashed px-6 py-10 text-center transition duration-200 ${
+                isDragging
+                  ? "border-accent bg-blue-50"
+                  : "border-stroke bg-[linear-gradient(180deg,rgba(248,251,255,0.92),rgba(255,255,255,0.98))]"
+              }`}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                setIsDragging(false);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <div className="mx-auto flex max-w-xl flex-col items-center">
+                <div className="animate-float rounded-[1.9rem] bg-white p-5 text-accent shadow-card">
+                  <UploadCloud className="h-10 w-10" />
+                </div>
+                <h3 className="mt-6 text-2xl font-semibold text-ink">
+                  {translation.upload.dropTitle}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-muted">
+                  {translation.upload.dropDescription}
+                </p>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Button onClick={() => inputRef.current?.click()}>
+                    {translation.upload.chooseFile}
+                  </Button>
+                  <Button variant="secondary" onClick={loadSamplePreview}>
+                    {translation.upload.sample}
+                  </Button>
+                </div>
+              </div>
+
+              <input
+                ref={inputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg"
+                onChange={(event) =>
+                  handleFileSelection(event.target.files?.[0] ?? null)
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(20,33,61,0.98),rgba(31,51,91,0.98))] text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/10 p-3 text-cyan-100">
+                <ScanSearch className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/55">
+                  {translation.upload.previewTitle}
+                </p>
+                <h3 className="mt-1 text-xl font-semibold">
+                  {translation.upload.previewDescription}
+                </h3>
+              </div>
+            </div>
+
+            {!file || !parsedResult ? (
+              <div className="mt-6 flex min-h-[340px] flex-col items-center justify-center rounded-[1.8rem] border border-dashed border-white/10 bg-white/10 px-6 text-center">
+                <div className="rounded-[1.5rem] bg-white/10 p-4 text-cyan-100">
+                  <ScanSearch className="h-6 w-6" />
+                </div>
+                <h4 className="mt-5 text-xl font-semibold">
+                  {translation.upload.emptyTitle}
+                </h4>
+                <p className="mt-3 max-w-md text-sm leading-7 text-white/68">
+                  {translation.upload.emptyDescription}
+                </p>
+              </div>
+            ) : (
+              <div className="mt-6 space-y-5">
+                <div className="rounded-[1.7rem] border border-white/10 bg-white/10 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-2xl bg-white p-3 text-accent shadow-card">
+                      <FileIcon className="h-6 w-6" />
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-muted">
-                      {parsedResult.note}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <p className="truncate font-semibold">{file.name}</p>
+                          <p className="mt-1 text-sm text-white/68">
+                            {formatFileSize(file.size)} • {parsedResult.sourceLabel}
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+                          {translation.upload.confidence} {parsedResult.confidence}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-white/72">
+                        {parsedResult.note}
+                      </p>
+                    </div>
+                  </div>
+
+                  {previewUrl ? (
+                    <div className="mt-4 overflow-hidden rounded-[1.4rem] border border-white/10">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={previewUrl}
+                        alt="Uploaded preview"
+                        className="h-52 w-full object-cover"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[1.4rem] border border-white/10 bg-black/10 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                      {translation.upload.mockResult}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold">
+                      {parsedResult.transactions.length}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.4rem] border border-white/10 bg-black/10 px-4 py-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                      {translation.upload.detailLine}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/74">
+                      {copy.workflowDescription}
                     </p>
                   </div>
                 </div>
-
-                {previewUrl ? (
-                  <div className="mt-4 overflow-hidden rounded-2xl border border-stroke">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={previewUrl}
-                      alt="Uploaded preview"
-                      className="h-52 w-full object-cover"
-                    />
-                  </div>
-                ) : null}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-              <div className="space-y-3">
-                {parsedResult.transactions.map((transaction, index) => (
-                  <div
-                    key={`${transaction.description}-${index}`}
-                    className="rounded-2xl border border-stroke bg-white px-4 py-4 transition hover:-translate-y-0.5 hover:shadow-soft"
-                  >
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <p className="font-semibold text-ink">
-                          {transaction.description}
-                        </p>
-                        <p className="mt-1 text-sm text-muted">
-                          {formatDate(transaction.date)} • {transaction.category}
-                        </p>
-                      </div>
-                      <div className="md:text-right">
-                        <p
-                          className={`text-lg font-semibold ${
-                            transaction.type === "income"
-                              ? "text-income"
-                              : "text-expense"
-                          }`}
-                        >
-                          {transaction.type === "income" ? "+" : "-"}
-                          {formatCurrency(transaction.amount)}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted">
-                          Mock parsed result
-                        </p>
+      <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(239,245,255,0.88))]">
+        <CardContent className="p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                {copy.resultsTitle}
+              </p>
+              <h3 className="mt-2 text-2xl font-semibold text-ink">
+                {translation.upload.previewTitle}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {copy.resultsDescription}
+              </p>
+            </div>
+          </div>
+
+          {!file || !parsedResult ? (
+            <EmptyState
+              icon={ScanSearch}
+              title={translation.upload.emptyTitle}
+              description={translation.upload.emptyDescription}
+              className="mt-6 min-h-[280px]"
+            />
+          ) : (
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {parsedResult.transactions.map((transaction, index) => (
+                <div
+                  key={`${transaction.title}-${index}`}
+                  className="rounded-[1.6rem] border border-stroke bg-white px-5 py-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-card"
+                >
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="font-semibold text-ink">{transaction.title}</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {formatDate(transaction.date, language)} •{" "}
+                        {getCategoryLabel(transaction.category, language)}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-muted">
+                          {getAccountLabel(transaction.account, language)}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-muted">
+                          {getPaymentMethodLabel(transaction.paymentMethod, language)}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-muted">
+                          {transaction.counterparty}
+                        </span>
                       </div>
                     </div>
+
+                    <div className="md:text-right">
+                      <p
+                        className={`text-lg font-semibold ${
+                          transaction.type === "income"
+                            ? "text-income"
+                            : "text-expense"
+                        }`}
+                      >
+                        {transaction.type === "income" ? "+" : "-"}
+                        {formatCurrency(transaction.amount, language)}
+                      </p>
+                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted">
+                        {getTransactionTypeLabel(transaction.type, language)} •{" "}
+                        {translation.upload.mockResult}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

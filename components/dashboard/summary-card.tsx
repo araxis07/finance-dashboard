@@ -2,6 +2,8 @@
 
 import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { getTranslation } from "@/lib/i18n";
+import { usePreferencesStore } from "@/stores/use-preferences-store";
 import { formatCurrency } from "@/lib/utils";
 
 interface SummaryCardProps {
@@ -15,6 +17,9 @@ export function SummaryCard({
   totalIncome,
   totalExpense
 }: SummaryCardProps) {
+  const language = usePreferencesStore((state) => state.language);
+  const translation = getTranslation(language);
+
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-white via-white to-blue-50/70">
       <CardContent className="p-6">
@@ -22,15 +27,16 @@ export function SummaryCard({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-ink px-3 py-1 text-xs uppercase tracking-[0.22em] text-white">
               <Wallet className="h-3.5 w-3.5" />
-              Portfolio snapshot
+              {translation.summary.badge}
             </div>
-            <p className="mt-5 text-sm text-muted">Total balance</p>
+            <p className="mt-5 text-sm text-muted">
+              {translation.summary.totalBalance}
+            </p>
             <p className="mt-2 text-4xl font-semibold tracking-tight text-ink md:text-5xl">
-              {formatCurrency(totalBalance)}
+              {formatCurrency(totalBalance, language)}
             </p>
             <p className="mt-3 max-w-lg text-sm leading-6 text-muted">
-              Keep an eye on incoming cash, outgoing spend, and how your balance
-              is moving over time.
+              {translation.summary.description}
             </p>
           </div>
 
@@ -41,9 +47,9 @@ export function SummaryCard({
                   <ArrowUpRight className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Income</p>
+                  <p className="text-sm text-muted">{translation.summary.income}</p>
                   <p className="mt-1 text-2xl font-semibold text-ink">
-                    {formatCurrency(totalIncome)}
+                    {formatCurrency(totalIncome, language)}
                   </p>
                 </div>
               </div>
@@ -55,9 +61,9 @@ export function SummaryCard({
                   <ArrowDownLeft className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Expense</p>
+                  <p className="text-sm text-muted">{translation.summary.expense}</p>
                   <p className="mt-1 text-2xl font-semibold text-ink">
-                    {formatCurrency(totalExpense)}
+                    {formatCurrency(totalExpense, language)}
                   </p>
                 </div>
               </div>
