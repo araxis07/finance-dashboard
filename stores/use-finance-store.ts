@@ -18,11 +18,9 @@ interface ToastPayload {
 }
 
 interface FinanceStore {
-  language: Language;
   transactions: Transaction[];
   isAddTransactionOpen: boolean;
   toast: ToastPayload | null;
-  setLanguage: (language: Language) => void;
   openAddTransaction: () => void;
   closeAddTransaction: () => void;
   addTransaction: (transaction: NewTransaction) => void;
@@ -117,7 +115,6 @@ function normalizeStoredTransaction(value: unknown): Transaction | null {
 
 function migratePersistedState(persistedState: unknown) {
   const fallback = {
-    language: "th" as Language,
     transactions: [] as Transaction[]
   };
 
@@ -134,7 +131,6 @@ function migratePersistedState(persistedState: unknown) {
       : (rawState as Partial<Record<keyof FinanceStore, unknown>>);
 
   return {
-    language: normalizeLanguage(state.language),
     transactions: Array.isArray(state.transactions)
       ? state.transactions
           .map((transaction) => normalizeStoredTransaction(transaction))
@@ -146,11 +142,9 @@ function migratePersistedState(persistedState: unknown) {
 export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
-      language: "th",
       transactions: [],
       isAddTransactionOpen: false,
       toast: null,
-      setLanguage: (language) => set({ language: normalizeLanguage(language) }),
       openAddTransaction: () => set({ isAddTransactionOpen: true }),
       closeAddTransaction: () => set({ isAddTransactionOpen: false }),
       addTransaction: (transaction) =>
@@ -191,7 +185,6 @@ export const useFinanceStore = create<FinanceStore>()(
         toast: null
       }),
       partialize: (state) => ({
-        language: state.language,
         transactions: state.transactions
       })
     }

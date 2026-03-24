@@ -4,23 +4,14 @@ import { Languages } from "lucide-react";
 import { getTranslation, languageOptions } from "@/lib/i18n";
 import { usePreferencesStore } from "@/stores/use-preferences-store";
 import { cn } from "@/lib/utils";
-import { useFinanceStore } from "@/stores/use-finance-store";
 
 export function LanguageSwitcher() {
   const language = usePreferencesStore((state) => state.language);
   const setPreferredLanguage = usePreferencesStore((state) => state.setLanguage);
-  const syncFinanceLanguage = useFinanceStore((state) => state.setLanguage);
   const translation = getTranslation(language);
 
   function handleLanguageChange(nextLanguage: (typeof languageOptions)[number]["id"]) {
-    document.documentElement.lang = nextLanguage;
     setPreferredLanguage(nextLanguage);
-
-    try {
-      syncFinanceLanguage(nextLanguage);
-    } catch {
-      // Keep language switching responsive even if the finance store is stale.
-    }
   }
 
   return (

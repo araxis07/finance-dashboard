@@ -22,6 +22,7 @@ import { useFinanceStore } from "@/stores/use-finance-store";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const language = usePreferencesStore((state) => state.language);
+  const initializeLanguage = usePreferencesStore((state) => state.initializeLanguage);
   const transactionCount = useFinanceStore((state) => state.transactions.length);
   const loadStarterTransactions = useFinanceStore(
     (state) => state.loadStarterTransactions
@@ -48,6 +49,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const currentPage = titleMap[pathname as keyof typeof titleMap] ?? titleMap["/"];
+
+  useEffect(() => {
+    initializeLanguage();
+  }, [initializeLanguage]);
 
   useEffect(() => {
     document.documentElement.lang = language;

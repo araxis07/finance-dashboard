@@ -12,17 +12,17 @@ export function AddTransactionModal() {
   const closeAddTransaction = useFinanceStore((state) => state.closeAddTransaction);
   const translation = getTranslation(language);
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <div
-      aria-hidden={!isOpen}
-      className={`fixed inset-0 z-50 transition ${
-        isOpen ? "pointer-events-auto" : "pointer-events-none"
-      }`}
+      aria-hidden={false}
+      className="fixed inset-0 z-50 transition"
     >
       <div
-        className={`absolute inset-0 bg-slate-950/55 backdrop-blur-sm transition ${
-          isOpen ? "opacity-100" : "opacity-0"
-        }`}
+        className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm transition opacity-100"
         onClick={closeAddTransaction}
       />
 
@@ -30,9 +30,7 @@ export function AddTransactionModal() {
         <div
           aria-modal="true"
           role="dialog"
-          className={`mx-auto flex min-h-full w-full max-w-[1440px] items-center justify-center transition duration-200 ${
-            isOpen ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}
+          className="mx-auto flex min-h-full w-full max-w-[1440px] items-center justify-center transition duration-200 translate-y-0 opacity-100"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="w-full rounded-[2rem] border border-white/20 bg-[linear-gradient(180deg,rgba(246,249,255,0.98),rgba(255,255,255,0.96))] p-4 shadow-card sm:p-5">
