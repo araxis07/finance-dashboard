@@ -2,16 +2,14 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import { getTranslation } from "@/lib/i18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { useFinanceStore } from "@/stores/use-finance-store";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import { TransactionForm } from "./transaction-form";
 
 export function AddTransactionModal() {
-  const language = usePreferencesStore((state) => state.language);
+  const { translation } = useI18n();
   const isOpen = useFinanceStore((state) => state.isAddTransactionOpen);
   const closeAddTransaction = useFinanceStore((state) => state.closeAddTransaction);
-  const translation = getTranslation(language);
 
   useEffect(() => {
     if (!isOpen) {

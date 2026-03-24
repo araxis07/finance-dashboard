@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,24 +14,18 @@ import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ToastViewport } from "@/components/ui/toast-viewport";
-import { getTranslation } from "@/lib/i18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
 import { useFinanceStore } from "@/stores/use-finance-store";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const language = usePreferencesStore((state) => state.language);
-  const theme = usePreferencesStore((state) => state.theme);
-  const initializePreferences = usePreferencesStore(
-    (state) => state.initializePreferences
-  );
+  const { language, translation } = useI18n();
   const transactionCount = useFinanceStore((state) => state.transactions.length);
   const loadStarterTransactions = useFinanceStore(
     (state) => state.loadStarterTransactions
   );
   const openAddTransaction = useFinanceStore((state) => state.openAddTransaction);
-  const translation = getTranslation(language);
 
   const navigation = [
     {
@@ -54,16 +47,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const currentPage = titleMap[pathname as keyof typeof titleMap] ?? titleMap["/"];
 
-  useEffect(() => {
-    initializePreferences();
-  }, [initializePreferences]);
-
-  useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-  }, [language, theme]);
-
   return (
     <>
       <div className="relative min-h-screen">
@@ -82,11 +65,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                 <div className="relative">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs uppercase tracking-[0.24em] text-white/62">
                         {translation.shell.brandName}
                       </p>
-                      <h1 className="mt-3 text-2xl font-semibold">
+                      <h1 className="mt-3 break-words text-2xl font-semibold">
                         {translation.shell.brandTitle}
                       </h1>
                     </div>
@@ -168,7 +151,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="badge-pill">
                   {translation.shell.workspaceLabel}
                 </div>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-ink sm:text-[2.2rem]">
+                <h2 className="mt-4 break-words text-3xl font-semibold tracking-tight text-ink sm:text-[2.2rem]">
                   {currentPage.title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">

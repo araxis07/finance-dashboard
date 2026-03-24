@@ -1,7 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist } from "zustand/middleware";
+import { createBrowserJSONStorage } from "@/lib/browser-storage";
 import {
   buildStarterTransactions,
   normalizeAccountId,
@@ -178,7 +179,7 @@ export const useFinanceStore = create<FinanceStore>()(
     {
       name: "finance-dashboard-store",
       version: 2,
-      storage: createJSONStorage(() => localStorage),
+      storage: createBrowserJSONStorage(),
       migrate: (persistedState) => ({
         ...migratePersistedState(persistedState),
         isAddTransactionOpen: false,

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { AppPreferencesProvider } from "@/components/providers/app-preferences-provider";
 import { AppShell } from "@/components/layout/app-shell";
+import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,12 +11,13 @@ export const metadata: Metadata = {
 
 const themeInitScript = `
 (() => {
-  const storageKey = "finance-dashboard-preferences";
+  const storageKey = "${PREFERENCES_STORAGE_KEY}";
   const root = document.documentElement;
   const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 
+  let language = "th";
   let theme = systemTheme;
 
   try {
@@ -22,23 +25,29 @@ const themeInitScript = `
 
     if (raw) {
       const parsed = JSON.parse(raw);
-      const candidate =
+      const state =
         parsed && typeof parsed === "object"
           ? "state" in parsed && parsed.state && typeof parsed.state === "object"
-            ? parsed.state.theme
-            : parsed.theme
+            ? parsed.state
+            : parsed
           : null;
 
-      if (candidate === "light" || candidate === "dark") {
-        theme = candidate;
+      if (state?.theme === "light" || state?.theme === "dark") {
+        theme = state.theme;
+      }
+
+      if (state?.language === "th" || state?.language === "en" || state?.language === "ja") {
+        language = state.language;
       }
     }
   } catch {
     theme = systemTheme;
   }
 
+  root.lang = language;
   root.dataset.theme = theme;
   root.style.colorScheme = theme;
+  root.classList.toggle("dark", theme === "dark");
 })();
 `;
 
@@ -53,7 +62,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="bg-page text-ink antialiased">
-        <AppShell>{children}</AppShell>
+        <AppPreferencesProvider>
+          <AppShell>{children}</AppShell>
+        </AppPreferencesProvider>
       </body>
     </html>
   );

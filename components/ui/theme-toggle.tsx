@@ -1,9 +1,8 @@
 "use client";
 
 import { MoonStar, SunMedium } from "lucide-react";
-import { getTranslation } from "@/lib/i18n";
+import { useI18n, useThemePreference } from "@/hooks/use-i18n";
 import { cn } from "@/lib/utils";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { Theme } from "@/types/app";
 
 const themeOptions: Array<{
@@ -21,10 +20,8 @@ const themeOptions: Array<{
 ];
 
 export function ThemeToggle() {
-  const language = usePreferencesStore((state) => state.language);
-  const theme = usePreferencesStore((state) => state.theme);
-  const setTheme = usePreferencesStore((state) => state.setTheme);
-  const translation = getTranslation(language);
+  const { translation } = useI18n();
+  const { setTheme, theme } = useThemePreference();
 
   return (
     <div className="control-shell">

@@ -12,6 +12,7 @@ import {
   Tags
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   accountOptions,
   getAccountLabel,
@@ -22,10 +23,8 @@ import {
   getTransactionTypeLabel,
   paymentMethodOptions
 } from "@/lib/finance";
-import { getTranslation } from "@/lib/i18n";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { useFinanceStore } from "@/stores/use-finance-store";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { Language } from "@/types/app";
 import type { NewTransaction, TransactionType } from "@/types/finance";
 
@@ -151,10 +150,9 @@ export function TransactionForm({
   onCancel,
   isOpen
 }: TransactionFormProps) {
-  const language = usePreferencesStore((state) => state.language);
+  const { language, translation } = useI18n();
   const transactions = useFinanceStore((state) => state.transactions);
   const addTransaction = useFinanceStore((state) => state.addTransaction);
-  const translation = getTranslation(language);
   const copy = composerCopy[language];
   const [draft, setDraft] = useState<TransactionDraft>(createInitialDraft());
   const [errorMessage, setErrorMessage] = useState("");
@@ -251,9 +249,9 @@ export function TransactionForm({
       {variant === "panel" ? (
         <div className="panel p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div className="min-w-0">
               <div className="badge-pill">{copy.badge}</div>
-              <h3 className="mt-4 max-w-2xl text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+              <h3 className="mt-4 max-w-2xl break-words text-2xl font-semibold tracking-tight text-ink md:text-3xl">
                 {copy.title}
               </h3>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
@@ -549,11 +547,11 @@ export function TransactionForm({
 
             <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-black/10 p-5">
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/55">
                     {copy.draftSummary}
                   </p>
-                  <h4 className="mt-2 text-lg font-semibold">
+                  <h4 className="mt-2 break-words text-lg font-semibold">
                     {draft.title || translation.modal.placeholders.title}
                   </h4>
                 </div>
@@ -587,7 +585,7 @@ export function TransactionForm({
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/8 px-4 py-3">
                   <Tags className="h-4 w-4 text-white/78" />
-                  <span>
+                  <span className="break-words">
                     {draft.tags
                       ? draft.tags
                       : getPaymentMethodLabel(draft.paymentMethod, language)}
@@ -608,8 +606,8 @@ export function TransactionForm({
               {latestSaved ? (
                 <div className="mt-4 rounded-[1.35rem] border border-white/8 bg-black/10 p-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-semibold">{latestSaved.title}</p>
+                    <div className="min-w-0">
+                      <p className="break-words font-semibold">{latestSaved.title}</p>
                       <p className="mt-1 text-sm text-white/65">
                         {getCategoryLabel(latestSaved.category, language)} •{" "}
                         {formatDate(latestSaved.date, language)}

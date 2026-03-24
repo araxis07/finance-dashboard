@@ -1,24 +1,26 @@
 "use client";
 
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { createBrowserJSONStorage } from "@/lib/browser-storage";
+import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
 import type { Language, Theme } from "@/types/app";
 
 interface PreferencesStore {
+  hasHydrated: boolean;
   language: Language;
   theme: Theme;
-  initializePreferences: () => void;
+  setHasHydrated: (value: boolean) => void;
   setLanguage: (language: Language) => void;
   setTheme: (theme: Theme) => void;
 }
-
-const STORAGE_KEY = "finance-dashboard-preferences";
 
 function normalizeLanguage(value: unknown): Language {
   return value === "en" || value === "ja" || value === "th" ? value : "th";
 }
 
-function normalizeTheme(value: unknown): Theme {
-  return value === "dark" || value === "light" ? value : "light";
+function normalizeTheme(value: unknown, fallback: Theme = "light"): Theme {
+  return value === "dark" || value === "light" ? value : fallback;
 }
 
 function getSystemTheme(): Theme {
@@ -31,105 +33,64 @@ function getSystemTheme(): Theme {
     : "light";
 }
 
-function readStoredPreferences() {
-  const fallback = {
-    language: "th" as Language,
-    theme: getSystemTheme()
+function normalizePersistedPreferences(
+  persistedState: unknown,
+  fallbackTheme: Theme
+) {
+  if (!persistedState || typeof persistedState !== "object") {
+    return {
+      language: "th" as Language,
+      theme: fallbackTheme
+    };
+  }
+
+  const candidate =
+    "state" in persistedState &&
+    persistedState.state &&
+    typeof persistedState.state === "object"
+      ? (persistedState.state as Record<string, unknown>)
+      : (persistedState as Record<string, unknown>);
+
+  return {
+    language: normalizeLanguage(candidate.language),
+    theme: normalizeTheme(candidate.theme, fallbackTheme)
   };
+}
 
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-
-  try {
-    const rawValue = window.localStorage.getItem(STORAGE_KEY);
-
-    if (!rawValue) {
-      return fallback;
-    }
-
-    const parsedValue = JSON.parse(rawValue) as
-      | string
-      | {
-          language?: unknown;
-          theme?: unknown;
-          state?: {
-            language?: unknown;
-            theme?: unknown;
-          };
-        };
-
-    if (typeof parsedValue === "string") {
-      return {
-        language: normalizeLanguage(parsedValue),
-        theme: fallback.theme
-      };
-    }
-
-    if (parsedValue && typeof parsedValue === "object") {
-      if ("state" in parsedValue && parsedValue.state) {
-        const stateTheme = parsedValue.state.theme;
-
-        return {
-          language: normalizeLanguage(parsedValue.state.language),
-          theme:
-            stateTheme === "light" || stateTheme === "dark"
-              ? stateTheme
-              : fallback.theme
-        };
+export const usePreferencesStore = create<PreferencesStore>()(
+  persist(
+    (set) => ({
+      hasHydrated: false,
+      language: "th",
+      theme: getSystemTheme(),
+      setHasHydrated: (value) => set({ hasHydrated: value }),
+      setLanguage: (language) => {
+        set({
+          language: normalizeLanguage(language)
+        });
+      },
+      setTheme: (theme) => {
+        set({
+          theme: normalizeTheme(theme, getSystemTheme())
+        });
       }
-
-      const directTheme = parsedValue.theme;
-
-      return {
-        language: normalizeLanguage(parsedValue.language),
-        theme:
-          directTheme === "light" || directTheme === "dark"
-            ? directTheme
-            : fallback.theme
-      };
+    }),
+    {
+      name: PREFERENCES_STORAGE_KEY,
+      version: 3,
+      storage: createBrowserJSONStorage(),
+      partialize: (state) => ({
+        language: state.language,
+        theme: state.theme
+      }),
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...normalizePersistedPreferences(persistedState, currentState.theme)
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
+      skipHydration: true
     }
-  } catch {
-    return fallback;
-  }
-
-  return fallback;
-}
-
-function writeStoredPreferences(language: Language, theme: Theme) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        state: { language, theme },
-        version: 2
-      })
-    );
-  } catch {
-    // Keep the in-memory preferences responsive even if storage is unavailable.
-  }
-}
-
-export const usePreferencesStore = create<PreferencesStore>()((set) => ({
-  language: "th",
-  theme: "light",
-  initializePreferences: () => set(readStoredPreferences()),
-  setLanguage: (language) => {
-    const normalizedLanguage = normalizeLanguage(language);
-    set((state) => {
-      writeStoredPreferences(normalizedLanguage, state.theme);
-      return { language: normalizedLanguage };
-    });
-  },
-  setTheme: (theme) => {
-    const normalizedTheme = normalizeTheme(theme);
-    set((state) => {
-      writeStoredPreferences(state.language, normalizedTheme);
-      return { theme: normalizedTheme };
-    });
-  }
-}));
+  )
+);

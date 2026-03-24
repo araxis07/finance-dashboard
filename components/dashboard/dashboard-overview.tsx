@@ -6,15 +6,14 @@ import { RecentTransactions } from "@/components/dashboard/recent-transactions";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { TransactionForm } from "@/components/transactions/transaction-form";
 import { Card, CardContent } from "@/components/ui/card";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getExpenseChartData,
   getRecentTransactions,
   getSummary
 } from "@/lib/finance";
-import { getTranslation } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/utils";
 import { useFinanceStore } from "@/stores/use-finance-store";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { Language } from "@/types/app";
 
 const heroCopy: Record<
@@ -69,9 +68,8 @@ const heroCopy: Record<
 };
 
 export function DashboardOverview() {
-  const language = usePreferencesStore((state) => state.language);
+  const { language, translation } = useI18n();
   const transactions = useFinanceStore((state) => state.transactions);
-  const translation = getTranslation(language);
   const copy = heroCopy[language];
   const summary = getSummary(transactions);
   const expenseData = getExpenseChartData(transactions);
@@ -120,7 +118,7 @@ export function DashboardOverview() {
                 <p className="text-xs uppercase tracking-[0.18em] text-white/55">
                   {copy.avgExpense}
                 </p>
-                <p className="mt-3 text-2xl font-semibold">
+                <p className="mt-3 break-words text-2xl font-semibold">
                   {formatCurrency(averageExpense, language)}
                 </p>
               </div>

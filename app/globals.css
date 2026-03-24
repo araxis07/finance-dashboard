@@ -115,6 +115,7 @@ input,
 select,
 textarea {
   font: inherit;
+  min-width: 0;
 }
 
 button {
@@ -136,10 +137,12 @@ h3,
 h4,
 h5,
 h6 {
+  overflow-wrap: anywhere;
   text-wrap: balance;
 }
 
 p {
+  overflow-wrap: anywhere;
   text-wrap: pretty;
 }
 
@@ -218,7 +221,7 @@ svg {
   }
 
   .field-input {
-    @apply h-12 w-full rounded-[1rem] px-4 text-sm text-ink shadow-sm outline-none transition placeholder:text-muted/70;
+    @apply h-12 w-full min-w-0 rounded-[1rem] px-4 text-sm text-ink shadow-sm outline-none transition placeholder:text-muted/70;
     border: 1px solid rgb(var(--stroke) / 0.7);
     background-color: rgb(var(--surface));
   }
@@ -234,7 +237,7 @@ svg {
   }
 
   .field-textarea {
-    @apply min-h-[158px] w-full rounded-[1rem] px-4 py-3 text-sm text-ink shadow-sm outline-none transition placeholder:text-muted/70;
+    @apply min-h-[158px] w-full min-w-0 rounded-[1rem] px-4 py-3 text-sm text-ink shadow-sm outline-none transition placeholder:text-muted/70;
     border: 1px solid rgb(var(--stroke) / 0.7);
     background-color: rgb(var(--surface));
   }
@@ -256,7 +259,7 @@ svg {
   }
 
   .control-button {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted transition;
+    @apply inline-flex min-w-0 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted transition disabled:pointer-events-none disabled:opacity-50;
   }
 
   .control-button-active {

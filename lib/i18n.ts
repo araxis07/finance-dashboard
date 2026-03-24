@@ -438,8 +438,52 @@ const translations = {
   }
 } as const;
 
+type TranslationTree = (typeof translations)["th"];
+type TranslationValue =
+  | string
+  | ((...args: any[]) => string)
+  | {
+      [key: string]: TranslationValue;
+    };
+
+function isTranslationBranch(value: TranslationValue): value is Record<string, TranslationValue> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeTranslations<T extends TranslationValue>(
+  fallback: T,
+  candidate: TranslationValue | undefined
+): T {
+  if (!isTranslationBranch(fallback)) {
+    return (candidate ?? fallback) as T;
+  }
+
+  const mergedEntries = Object.keys(fallback).reduce<Record<string, TranslationValue>>(
+    (accumulator, key) => {
+      const fallbackValue = fallback[key];
+      const candidateValue =
+        candidate && isTranslationBranch(candidate) ? candidate[key] : undefined;
+
+      accumulator[key] = mergeTranslations(
+        fallbackValue,
+        candidateValue as TranslationValue | undefined
+      );
+      return accumulator;
+    },
+    {}
+  );
+
+  return mergedEntries as T;
+}
+
+const resolvedTranslations: Record<Language, TranslationTree> = {
+  th: translations.th,
+  en: mergeTranslations(translations.th, translations.en),
+  ja: mergeTranslations(translations.th, translations.ja)
+};
+
 export function getTranslation(language: Language) {
-  return translations[language] ?? translations.th;
+  return resolvedTranslations[language] ?? resolvedTranslations.th;
 }
 
 export function getLocale(language: Language) {

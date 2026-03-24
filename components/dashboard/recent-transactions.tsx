@@ -4,16 +4,15 @@ import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useI18n } from "@/hooks/use-i18n";
 import {
   getAccountLabel,
   getCategoryLabel,
   getPaymentMethodLabel,
   getTransactionTypeLabel
 } from "@/lib/finance";
-import { getTranslation } from "@/lib/i18n";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { useFinanceStore } from "@/stores/use-finance-store";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { Transaction } from "@/types/finance";
 
 export function RecentTransactions({
@@ -21,12 +20,11 @@ export function RecentTransactions({
 }: {
   transactions: Transaction[];
 }) {
-  const language = usePreferencesStore((state) => state.language);
+  const { language, translation } = useI18n();
   const loadStarterTransactions = useFinanceStore(
     (state) => state.loadStarterTransactions
   );
   const openAddTransaction = useFinanceStore((state) => state.openAddTransaction);
-  const translation = getTranslation(language);
 
   return (
     <Card>
@@ -92,7 +90,7 @@ export function RecentTransactions({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-lg font-semibold text-ink">
+                          <p className="break-words text-lg font-semibold leading-7 text-ink">
                             {transactionTitle}
                           </p>
                           <p className="mt-1 text-sm text-muted">
@@ -130,7 +128,7 @@ export function RecentTransactions({
                           {transaction.counterparty ? (
                             <div className="rounded-xl border border-stroke/60 bg-panel/86 px-3 py-3 text-sm text-muted">
                               {translation.recent.sourceCounterparty}:{" "}
-                              <span className="text-ink">
+                              <span className="break-words text-ink">
                                 {transaction.counterparty}
                               </span>
                             </div>
@@ -138,19 +136,25 @@ export function RecentTransactions({
                           {transaction.location ? (
                             <div className="rounded-xl border border-stroke/60 bg-panel/86 px-3 py-3 text-sm text-muted">
                               {translation.recent.sourceLocation}:{" "}
-                              <span className="text-ink">{transaction.location}</span>
+                              <span className="break-words text-ink">
+                                {transaction.location}
+                              </span>
                             </div>
                           ) : null}
                           {transaction.reference ? (
                             <div className="rounded-xl border border-stroke/60 bg-panel/86 px-3 py-3 text-sm text-muted">
                               {translation.recent.sourceReference}:{" "}
-                              <span className="text-ink">{transaction.reference}</span>
+                              <span className="break-all text-ink">
+                                {transaction.reference}
+                              </span>
                             </div>
                           ) : null}
                           {transaction.note ? (
                             <div className="rounded-xl border border-stroke/60 bg-panel/86 px-3 py-3 text-sm text-muted">
                               {translation.recent.sourceNote}:{" "}
-                              <span className="text-ink">{transaction.note}</span>
+                              <span className="break-words text-ink">
+                                {transaction.note}
+                              </span>
                             </div>
                           ) : null}
                         </div>

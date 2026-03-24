@@ -2,9 +2,8 @@
 
 import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTranslation } from "@/lib/i18n";
+import { useI18n } from "@/hooks/use-i18n";
 import { formatCurrency } from "@/lib/utils";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 
 interface SummaryCardProps {
   totalBalance: number;
@@ -17,8 +16,7 @@ export function SummaryCard({
   totalIncome,
   totalExpense
 }: SummaryCardProps) {
-  const language = usePreferencesStore((state) => state.language);
-  const translation = getTranslation(language);
+  const { language, translation } = useI18n();
 
   return (
     <Card>
@@ -37,11 +35,11 @@ export function SummaryCard({
           <div className="grid gap-3 md:grid-cols-3">
             <div className="stat-tile bg-panel/92">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-muted">
                     {translation.summary.totalBalance}
                   </p>
-                  <p className="mt-3 text-2xl font-semibold text-ink">
+                  <p className="mt-3 break-words text-2xl font-semibold text-ink">
                     {formatCurrency(totalBalance, language)}
                   </p>
                 </div>
@@ -53,11 +51,11 @@ export function SummaryCard({
 
             <div className="stat-tile bg-incomeSoft/70">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-muted">
                     {translation.summary.income}
                   </p>
-                  <p className="mt-3 text-2xl font-semibold text-ink">
+                  <p className="mt-3 break-words text-2xl font-semibold text-ink">
                     {formatCurrency(totalIncome, language)}
                   </p>
                 </div>
@@ -69,11 +67,11 @@ export function SummaryCard({
 
             <div className="stat-tile bg-expenseSoft/72">
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs uppercase tracking-[0.18em] text-muted">
                     {translation.summary.expense}
                   </p>
-                  <p className="mt-3 text-2xl font-semibold text-ink">
+                  <p className="mt-3 break-words text-2xl font-semibold text-ink">
                     {formatCurrency(totalExpense, language)}
                   </p>
                 </div>

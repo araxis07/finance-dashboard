@@ -5,11 +5,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useI18n } from "@/hooks/use-i18n";
 import { getCategoryLabel } from "@/lib/finance";
-import { getTranslation } from "@/lib/i18n";
 import { formatCurrency } from "@/lib/utils";
 import { useFinanceStore } from "@/stores/use-finance-store";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { TransactionCategoryId } from "@/types/finance";
 
 interface ExpenseDatum {
@@ -19,12 +18,11 @@ interface ExpenseDatum {
 }
 
 export function ExpenseChartCard({ data }: { data: ExpenseDatum[] }) {
-  const language = usePreferencesStore((state) => state.language);
+  const { language, translation } = useI18n();
   const openAddTransaction = useFinanceStore((state) => state.openAddTransaction);
   const loadStarterTransactions = useFinanceStore(
     (state) => state.loadStarterTransactions
   );
-  const translation = getTranslation(language);
   const totalExpense = data.reduce((total, item) => total + item.value, 0);
 
   return (
@@ -68,7 +66,7 @@ export function ExpenseChartCard({ data }: { data: ExpenseDatum[] }) {
           />
         ) : (
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="relative h-[320px] rounded-[1.6rem] border border-stroke/70 bg-surface/72 p-4">
+            <div className="relative h-[280px] rounded-[1.6rem] border border-stroke/70 bg-surface/72 p-4 sm:h-[320px]">
               <div className="pointer-events-none absolute inset-x-0 top-1/2 z-10 -translate-y-1/2 text-center">
                 <p className="text-sm text-muted">{translation.chart.centerLabel}</p>
                 <p className="mt-1 text-2xl font-semibold text-ink">
@@ -134,8 +132,8 @@ export function ExpenseChartCard({ data }: { data: ExpenseDatum[] }) {
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <p className="font-semibold text-ink">
+                      <div className="min-w-0 text-right">
+                        <p className="break-words font-semibold text-ink">
                           {formatCurrency(item.value, language)}
                         </p>
                         <p className="text-xs text-muted">

@@ -1,17 +1,15 @@
 "use client";
 
 import { Languages } from "lucide-react";
-import { getTranslation, languageOptions } from "@/lib/i18n";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
+import { useI18n } from "@/hooks/use-i18n";
+import { languageOptions } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export function LanguageSwitcher() {
-  const language = usePreferencesStore((state) => state.language);
-  const setPreferredLanguage = usePreferencesStore((state) => state.setLanguage);
-  const translation = getTranslation(language);
+  const { language, setLanguage, translation } = useI18n();
 
   function handleLanguageChange(nextLanguage: (typeof languageOptions)[number]["id"]) {
-    setPreferredLanguage(nextLanguage);
+    setLanguage(nextLanguage);
   }
 
   return (

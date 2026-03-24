@@ -21,7 +21,10 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("font-display text-xl font-semibold tracking-tight text-ink", className)}
+      className={cn(
+        "font-display break-words text-xl font-semibold tracking-tight text-ink",
+        className
+      )}
       {...props}
     />
   );

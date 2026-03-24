@@ -27,8 +27,10 @@ export function EmptyState({
       <div className="mb-4 rounded-2xl bg-panel p-4 text-accent shadow-sm">
         <Icon className="h-6 w-6" />
       </div>
-      <h3 className="text-lg font-semibold text-ink">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm leading-6 text-muted">{description}</p>
+      <h3 className="break-words text-lg font-semibold text-ink">{title}</h3>
+      <p className="mt-2 max-w-sm break-words text-sm leading-6 text-muted">
+        {description}
+      </p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
