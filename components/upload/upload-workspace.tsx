@@ -21,8 +21,8 @@ import {
 } from "@/lib/finance";
 import { getTranslation } from "@/lib/i18n";
 import { buildMockParsedResult } from "@/lib/mock-parser";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
 import { formatCurrency, formatDate, formatFileSize } from "@/lib/utils";
+import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { Language } from "@/types/app";
 import type { MockParsedResult } from "@/types/finance";
 
@@ -144,6 +144,7 @@ export function UploadWorkspace() {
 
   useEffect(() => {
     if (!file) {
+      setParsedResult(null);
       return;
     }
 
@@ -173,14 +174,12 @@ export function UploadWorkspace() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[2.2rem] border border-white/60 bg-[linear-gradient(135deg,#13203b_0%,#1b315f_55%,#0d766e_100%)] p-6 text-white shadow-card sm:p-7">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -right-10 top-0 h-52 w-52 rounded-full bg-cyan-300/18 blur-3xl" />
-          <div className="absolute bottom-0 left-0 h-56 w-56 rounded-full bg-blue-300/16 blur-3xl" />
-        </div>
+    <div className="space-y-5">
+      <section className="hero-panel p-6 sm:p-7">
+        <div className="hero-glow -right-8 top-0 h-48 w-48" />
+        <div className="hero-glow -left-10 bottom-0 h-44 w-44" />
 
-        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.06fr)_minmax(0,0.94fr)]">
+        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_360px]">
           <div>
             <div className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-white/76">
               {copy.badge}
@@ -196,7 +195,7 @@ export function UploadWorkspace() {
               {["PDF", "Excel", "PNG/JPG"].map((type) => (
                 <span
                   key={type}
-                  className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80"
+                  className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/78"
                 >
                   {type}
                 </span>
@@ -204,10 +203,10 @@ export function UploadWorkspace() {
             </div>
           </div>
 
-          <div className="grid gap-4">
-            <div className="rounded-[1.6rem] border border-white/12 bg-white/10 p-5 backdrop-blur">
+          <div className="grid gap-3">
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-5">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-emerald-300/15 p-3 text-emerald-100">
+                <div className="rounded-2xl bg-white/10 p-3 text-white/85">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
@@ -219,9 +218,9 @@ export function UploadWorkspace() {
               </div>
             </div>
 
-            <div className="rounded-[1.6rem] border border-white/12 bg-white/10 p-5 backdrop-blur">
+            <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-5">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-blue-300/15 p-3 text-blue-100">
+                <div className="rounded-2xl bg-white/10 p-3 text-white/85">
                   <WandSparkles className="h-5 w-5" />
                 </div>
                 <div>
@@ -236,14 +235,16 @@ export function UploadWorkspace() {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
-        <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(239,245,255,0.88))]">
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.04fr)_minmax(320px,0.96fr)]">
+        <Card>
           <CardContent className="p-6">
+            <div className="badge-pill w-fit">{translation.upload.title}</div>
+
             <div
-              className={`relative rounded-[1.9rem] border-2 border-dashed px-6 py-10 text-center transition duration-200 ${
+              className={`mt-5 rounded-[1.8rem] border-2 border-dashed px-6 py-10 text-center transition ${
                 isDragging
-                  ? "border-accent bg-blue-50"
-                  : "border-stroke bg-[linear-gradient(180deg,rgba(248,251,255,0.92),rgba(255,255,255,0.98))]"
+                  ? "border-accent/30 bg-accentSoft"
+                  : "border-stroke/70 bg-surface/72"
               }`}
               onDragEnter={(event) => {
                 event.preventDefault();
@@ -257,7 +258,7 @@ export function UploadWorkspace() {
               onDrop={handleDrop}
             >
               <div className="mx-auto flex max-w-xl flex-col items-center">
-                <div className="animate-float rounded-[1.9rem] bg-white p-5 text-accent shadow-card">
+                <div className="animate-float rounded-[1.7rem] bg-panel p-5 text-accent shadow-card">
                   <UploadCloud className="h-10 w-10" />
                 </div>
                 <h3 className="mt-6 text-2xl font-semibold text-ink">
@@ -290,85 +291,84 @@ export function UploadWorkspace() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(20,33,61,0.98),rgba(31,51,91,0.98))] text-white">
+        <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-white/10 p-3 text-cyan-100">
+              <div className="rounded-2xl bg-accentSoft p-3 text-ink">
                 <ScanSearch className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/55">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted">
                   {translation.upload.previewTitle}
                 </p>
-                <h3 className="mt-1 text-xl font-semibold">
+                <h3 className="mt-1 text-xl font-semibold text-ink">
                   {translation.upload.previewDescription}
                 </h3>
               </div>
             </div>
 
             {!file || !parsedResult ? (
-              <div className="mt-6 flex min-h-[340px] flex-col items-center justify-center rounded-[1.8rem] border border-dashed border-white/10 bg-white/10 px-6 text-center">
-                <div className="rounded-[1.5rem] bg-white/10 p-4 text-cyan-100">
-                  <ScanSearch className="h-6 w-6" />
-                </div>
-                <h4 className="mt-5 text-xl font-semibold">
-                  {translation.upload.emptyTitle}
-                </h4>
-                <p className="mt-3 max-w-md text-sm leading-7 text-white/68">
-                  {translation.upload.emptyDescription}
-                </p>
+              <div className="mt-6">
+                <EmptyState
+                  icon={ScanSearch}
+                  title={translation.upload.emptyTitle}
+                  description={translation.upload.emptyDescription}
+                  className="min-h-[340px]"
+                />
               </div>
             ) : (
               <div className="mt-6 space-y-5">
-                <div className="rounded-[1.7rem] border border-white/10 bg-white/10 p-5">
+                <div className="rounded-[1.6rem] border border-stroke/70 bg-surface/72 p-5">
                   <div className="flex items-start gap-4">
-                    <div className="rounded-2xl bg-white p-3 text-accent shadow-card">
+                    <div className="rounded-2xl bg-panel p-3 text-accent shadow-sm">
                       <FileIcon className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                        <div>
-                          <p className="truncate font-semibold">{file.name}</p>
-                          <p className="mt-1 text-sm text-white/68">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-ink">
+                            {file.name}
+                          </p>
+                          <p className="mt-1 text-sm text-muted">
                             {formatFileSize(file.size)} • {parsedResult.sourceLabel}
                           </p>
                         </div>
-                        <span className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-100">
+                        <span className="rounded-full bg-incomeSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-income">
                           {translation.upload.confidence} {parsedResult.confidence}
                         </span>
                       </div>
-                      <p className="mt-3 text-sm leading-6 text-white/72">
+                      <p className="mt-3 text-sm leading-6 text-muted">
                         {parsedResult.note}
                       </p>
                     </div>
                   </div>
 
                   {previewUrl ? (
-                    <div className="mt-4 overflow-hidden rounded-[1.4rem] border border-white/10">
+                    <div className="mt-4 overflow-hidden rounded-[1.4rem] border border-stroke/70">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={previewUrl}
                         alt="Uploaded preview"
-                        className="h-52 w-full object-cover"
+                        className="h-56 w-full object-cover"
                       />
                     </div>
                   ) : null}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[1.4rem] border border-white/10 bg-black/10 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                  <div className="stat-tile bg-panel/92">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted">
                       {translation.upload.mockResult}
                     </p>
-                    <p className="mt-2 text-2xl font-semibold">
+                    <p className="mt-2 text-2xl font-semibold text-ink">
                       {parsedResult.transactions.length}
                     </p>
                   </div>
-                  <div className="rounded-[1.4rem] border border-white/10 bg-black/10 px-4 py-4">
-                    <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                  <div className="stat-tile bg-panel/92">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted">
                       {translation.upload.detailLine}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-white/74">
+                    <p className="mt-2 text-sm leading-6 text-muted">
                       {copy.workflowDescription}
                     </p>
                   </div>
@@ -379,14 +379,12 @@ export function UploadWorkspace() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(239,245,255,0.88))]">
+      <Card>
         <CardContent className="p-6">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                {copy.resultsTitle}
-              </p>
-              <h3 className="mt-2 text-2xl font-semibold text-ink">
+              <div className="badge-pill">{copy.resultsTitle}</div>
+              <h3 className="mt-4 text-2xl font-semibold tracking-tight text-ink">
                 {translation.upload.previewTitle}
               </h3>
               <p className="mt-2 text-sm leading-6 text-muted">
@@ -403,14 +401,14 @@ export function UploadWorkspace() {
               className="mt-6 min-h-[280px]"
             />
           ) : (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="mt-6 grid gap-4 xl:grid-cols-2">
               {parsedResult.transactions.map((transaction, index) => (
                 <div
                   key={`${transaction.title}-${index}`}
-                  className="rounded-[1.6rem] border border-stroke bg-white px-5 py-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-card"
+                  className="rounded-[1.5rem] border border-stroke/70 bg-surface/72 px-5 py-5 transition hover:-translate-y-0.5 hover:bg-panel"
                 >
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-semibold text-ink">{transaction.title}</p>
                       <p className="mt-1 text-sm text-muted">
                         {formatDate(transaction.date, language)} •{" "}
@@ -418,13 +416,13 @@ export function UploadWorkspace() {
                       </p>
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-muted">
+                        <span className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted">
                           {getAccountLabel(transaction.account, language)}
                         </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-muted">
+                        <span className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted">
                           {getPaymentMethodLabel(transaction.paymentMethod, language)}
                         </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-muted">
+                        <span className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted">
                           {transaction.counterparty}
                         </span>
                       </div>

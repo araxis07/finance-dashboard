@@ -1,12 +1,14 @@
 "use client";
 
 import { create } from "zustand";
-import type { Language } from "@/types/app";
+import type { Language, Theme } from "@/types/app";
 
 interface PreferencesStore {
   language: Language;
-  initializeLanguage: () => void;
+  theme: Theme;
+  initializePreferences: () => void;
   setLanguage: (language: Language) => void;
+  setTheme: (theme: Theme) => void;
 }
 
 const STORAGE_KEY = "finance-dashboard-preferences";
@@ -15,48 +17,86 @@ function normalizeLanguage(value: unknown): Language {
   return value === "en" || value === "ja" || value === "th" ? value : "th";
 }
 
-function readStoredLanguage(): Language {
+function normalizeTheme(value: unknown): Theme {
+  return value === "dark" || value === "light" ? value : "light";
+}
+
+function getSystemTheme(): Theme {
   if (typeof window === "undefined") {
-    return "th";
+    return "light";
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+function readStoredPreferences() {
+  const fallback = {
+    language: "th" as Language,
+    theme: getSystemTheme()
+  };
+
+  if (typeof window === "undefined") {
+    return fallback;
   }
 
   try {
     const rawValue = window.localStorage.getItem(STORAGE_KEY);
 
     if (!rawValue) {
-      return "th";
+      return fallback;
     }
 
     const parsedValue = JSON.parse(rawValue) as
       | string
       | {
           language?: unknown;
+          theme?: unknown;
           state?: {
             language?: unknown;
+            theme?: unknown;
           };
         };
 
     if (typeof parsedValue === "string") {
-      return normalizeLanguage(parsedValue);
+      return {
+        language: normalizeLanguage(parsedValue),
+        theme: fallback.theme
+      };
     }
 
     if (parsedValue && typeof parsedValue === "object") {
       if ("state" in parsedValue && parsedValue.state) {
-        return normalizeLanguage(parsedValue.state.language);
+        const stateTheme = parsedValue.state.theme;
+
+        return {
+          language: normalizeLanguage(parsedValue.state.language),
+          theme:
+            stateTheme === "light" || stateTheme === "dark"
+              ? stateTheme
+              : fallback.theme
+        };
       }
 
-      if ("language" in parsedValue) {
-        return normalizeLanguage(parsedValue.language);
-      }
+      const directTheme = parsedValue.theme;
+
+      return {
+        language: normalizeLanguage(parsedValue.language),
+        theme:
+          directTheme === "light" || directTheme === "dark"
+            ? directTheme
+            : fallback.theme
+      };
     }
   } catch {
-    return "th";
+    return fallback;
   }
 
-  return "th";
+  return fallback;
 }
 
-function writeStoredLanguage(language: Language) {
+function writeStoredPreferences(language: Language, theme: Theme) {
   if (typeof window === "undefined") {
     return;
   }
@@ -65,24 +105,31 @@ function writeStoredLanguage(language: Language) {
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        state: { language },
-        version: 1
+        state: { language, theme },
+        version: 2
       })
     );
   } catch {
-    // Keep the in-memory language responsive even if storage is unavailable.
+    // Keep the in-memory preferences responsive even if storage is unavailable.
   }
 }
 
 export const usePreferencesStore = create<PreferencesStore>()((set) => ({
   language: "th",
-  initializeLanguage: () =>
-    set({
-      language: readStoredLanguage()
-    }),
+  theme: "light",
+  initializePreferences: () => set(readStoredPreferences()),
   setLanguage: (language) => {
     const normalizedLanguage = normalizeLanguage(language);
-    set({ language: normalizedLanguage });
-    writeStoredLanguage(normalizedLanguage);
+    set((state) => {
+      writeStoredPreferences(normalizedLanguage, state.theme);
+      return { language: normalizedLanguage };
+    });
+  },
+  setTheme: (theme) => {
+    const normalizedTheme = normalizeTheme(theme);
+    set((state) => {
+      writeStoredPreferences(state.language, normalizedTheme);
+      return { theme: normalizedTheme };
+    });
   }
 }));

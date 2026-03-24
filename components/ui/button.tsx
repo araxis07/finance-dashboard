@@ -9,11 +9,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses = {
   primary:
-    "bg-[linear-gradient(135deg,#14213d_0%,#2563eb_100%)] text-white shadow-soft hover:-translate-y-0.5 hover:brightness-105",
+    "bg-accent text-accentForeground shadow-soft hover:-translate-y-0.5 hover:opacity-95",
   secondary:
-    "bg-accentSoft text-accent shadow-sm hover:-translate-y-0.5 hover:bg-blue-100",
+    "bg-accentSoft text-ink shadow-sm hover:-translate-y-0.5 hover:bg-surfaceAlt",
   ghost:
-    "border border-stroke bg-white text-ink shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
+    "border border-stroke/70 bg-panel/90 text-ink shadow-sm hover:-translate-y-0.5 hover:bg-surface"
 };
 
 export function Button({

@@ -210,12 +210,12 @@ const legacyPaymentMethodIdMap: Record<string, PaymentMethodId> = {
 };
 
 const chartPalette = [
-  "#2563EB",
-  "#14B8A6",
-  "#F59E0B",
-  "#8B5CF6",
-  "#F97316",
-  "#0EA5E9"
+  "#60738A",
+  "#4F7A72",
+  "#5D78A8",
+  "#A07B45",
+  "#8A6B8F",
+  "#9A6B59"
 ];
 
 export function getCategoriesForType(type: TransactionType) {

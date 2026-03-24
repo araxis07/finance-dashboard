@@ -23,9 +23,9 @@ import {
   paymentMethodOptions
 } from "@/lib/finance";
 import { getTranslation } from "@/lib/i18n";
-import { usePreferencesStore } from "@/stores/use-preferences-store";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { useFinanceStore } from "@/stores/use-finance-store";
+import { usePreferencesStore } from "@/stores/use-preferences-store";
 import type { Language } from "@/types/app";
 import type { NewTransaction, TransactionType } from "@/types/finance";
 
@@ -247,15 +247,13 @@ export function TransactionForm({
   const isIncome = draft.type === "income";
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
+    <form className="space-y-5" onSubmit={handleSubmit}>
       {variant === "panel" ? (
-        <div className="rounded-[2rem] border border-white/60 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(236,244,255,0.86))] p-6 shadow-card">
+        <div className="panel p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="inline-flex rounded-full bg-ink px-3 py-1 text-xs uppercase tracking-[0.24em] text-white">
-                {copy.badge}
-              </div>
-              <h3 className="mt-4 max-w-2xl text-2xl font-semibold text-ink md:text-3xl">
+              <div className="badge-pill">{copy.badge}</div>
+              <h3 className="mt-4 max-w-2xl text-2xl font-semibold tracking-tight text-ink md:text-3xl">
                 {copy.title}
               </h3>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
@@ -264,16 +262,16 @@ export function TransactionForm({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/90 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted">
+              <div className="stat-tile bg-incomeSoft/70">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted">
                   {translation.summary.income}
                 </p>
                 <p className="mt-2 text-xl font-semibold text-ink">
                   {formatCurrency(summary.totalIncome, language)}
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-red-100 bg-red-50/90 px-4 py-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-muted">
+              <div className="stat-tile bg-expenseSoft/72">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted">
                   {translation.summary.expense}
                 </p>
                 <p className="mt-2 text-xl font-semibold text-ink">
@@ -285,368 +283,384 @@ export function TransactionForm({
         </div>
       ) : null}
 
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-        <section className="rounded-[2rem] border border-white/65 bg-white/92 p-5 shadow-card sm:p-6">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-            <div className="rounded-[1.5rem] border border-stroke bg-[linear-gradient(180deg,rgba(248,251,255,0.92),rgba(255,255,255,0.98))] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-                {translation.modal.primarySection}
-              </p>
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.12fr)_360px]">
+        <section className="space-y-5">
+          <div className="panel p-5 sm:p-6">
+            <div className="badge-pill">{translation.modal.primarySection}</div>
 
-              <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <label className="md:col-span-2">
-                  <span className="field-label">
-                    {translation.modal.transactionTitle}
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              <label className="md:col-span-2">
+                <span className="field-label">
+                  {translation.modal.transactionTitle}
+                </span>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder={translation.modal.placeholders.title}
+                  value={draft.title}
+                  onChange={(event) => updateDraft("title", event.target.value)}
+                  required
+                />
+              </label>
+
+              <label>
+                <span className="field-label">{translation.modal.amount}</span>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted">
+                    ฿
                   </span>
                   <input
-                    className="field-input"
-                    type="text"
-                    placeholder={translation.modal.placeholders.title}
-                    value={draft.title}
-                    onChange={(event) => updateDraft("title", event.target.value)}
+                    className="field-input pl-10"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder={translation.modal.placeholders.amount}
+                    value={draft.amount}
+                    onChange={(event) => updateDraft("amount", event.target.value)}
                     required
                   />
-                </label>
+                </div>
+              </label>
 
-                <label>
-                  <span className="field-label">{translation.modal.amount}</span>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted">
-                      ฿
-                    </span>
-                    <input
-                      className="field-input pl-10"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder={translation.modal.placeholders.amount}
-                      value={draft.amount}
-                      onChange={(event) => updateDraft("amount", event.target.value)}
-                      required
-                    />
-                  </div>
-                </label>
+              <label>
+                <span className="field-label">{translation.modal.date}</span>
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                  <input
+                    className="field-input pl-10"
+                    type="date"
+                    value={draft.date}
+                    onChange={(event) => updateDraft("date", event.target.value)}
+                    required
+                  />
+                </div>
+              </label>
 
-                <label>
-                  <span className="field-label">{translation.modal.date}</span>
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                    <input
-                      className="field-input pl-10"
-                      type="date"
-                      value={draft.date}
-                      onChange={(event) => updateDraft("date", event.target.value)}
-                      required
-                    />
-                  </div>
-                </label>
+              <div>
+                <span className="field-label">{translation.modal.type}</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["expense", "income"] as TransactionType[]).map((type) => {
+                    const active = draft.type === type;
+                    const Icon =
+                      type === "income" ? ArrowUpRight : ArrowDownLeft;
 
-                <label>
-                  <span className="field-label">{translation.modal.type}</span>
-                  <select
-                    className="field-input"
-                    value={draft.type}
-                    onChange={(event) =>
-                      updateDraft("type", event.target.value as TransactionType)
-                    }
-                  >
-                    <option value="expense">
-                      {getTransactionTypeLabel("expense", language)}
-                    </option>
-                    <option value="income">
-                      {getTransactionTypeLabel("income", language)}
-                    </option>
-                  </select>
-                </label>
-
-                <label>
-                  <span className="field-label">{translation.modal.category}</span>
-                  <select
-                    className="field-input"
-                    value={draft.category}
-                    onChange={(event) =>
-                      updateDraft(
-                        "category",
-                        event.target.value as NewTransaction["category"]
-                      )
-                    }
-                  >
-                    {categoryOptions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getCategoryLabel(item.id, language)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  <span className="field-label">{translation.modal.account}</span>
-                  <select
-                    className="field-input"
-                    value={draft.account}
-                    onChange={(event) =>
-                      updateDraft("account", event.target.value as NewTransaction["account"])
-                    }
-                  >
-                    {accountOptions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getAccountLabel(item.id, language)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  <span className="field-label">{translation.modal.paymentMethod}</span>
-                  <select
-                    className="field-input"
-                    value={draft.paymentMethod}
-                    onChange={(event) =>
-                      updateDraft(
-                        "paymentMethod",
-                        event.target.value as NewTransaction["paymentMethod"]
-                      )
-                    }
-                  >
-                    {paymentMethodOptions.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getPaymentMethodLabel(item.id, language)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => updateDraft("type", type)}
+                        className={cn(
+                          "flex h-12 items-center justify-center gap-2 rounded-[1rem] border text-sm font-semibold transition",
+                          active
+                            ? "border-accent/20 bg-accent text-accentForeground shadow-soft"
+                            : "border-stroke/70 bg-surface text-ink hover:bg-panel"
+                        )}
+                        aria-pressed={active}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {getTransactionTypeLabel(type, language)}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
+              <label>
+                <span className="field-label">{translation.modal.category}</span>
+                <select
+                  className="field-input"
+                  value={draft.category}
+                  onChange={(event) =>
+                    updateDraft(
+                      "category",
+                      event.target.value as NewTransaction["category"]
+                    )
+                  }
+                >
+                  {categoryOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getCategoryLabel(item.id, language)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="field-label">{translation.modal.account}</span>
+                <select
+                  className="field-input"
+                  value={draft.account}
+                  onChange={(event) =>
+                    updateDraft("account", event.target.value as NewTransaction["account"])
+                  }
+                >
+                  {accountOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getAccountLabel(item.id, language)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="field-label">
+                  {translation.modal.paymentMethod}
+                </span>
+                <select
+                  className="field-input"
+                  value={draft.paymentMethod}
+                  onChange={(event) =>
+                    updateDraft(
+                      "paymentMethod",
+                      event.target.value as NewTransaction["paymentMethod"]
+                    )
+                  }
+                >
+                  {paymentMethodOptions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {getPaymentMethodLabel(item.id, language)}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
+          </div>
 
-            <div className="rounded-[1.5rem] border border-stroke bg-[linear-gradient(180deg,rgba(245,248,255,0.88),rgba(255,255,255,0.98))] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-                {translation.modal.detailsSection}
-              </p>
+          <div className="panel p-5 sm:p-6">
+            <div className="badge-pill">{translation.modal.detailsSection}</div>
 
-              <div className="mt-5 grid gap-5">
-                <label>
-                  <span className="field-label">{translation.modal.counterparty}</span>
-                  <input
-                    className="field-input"
-                    type="text"
-                    placeholder={translation.modal.placeholders.counterparty}
-                    value={draft.counterparty}
-                    onChange={(event) =>
-                      updateDraft("counterparty", event.target.value)
-                    }
-                  />
-                </label>
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
+              <label>
+                <span className="field-label">{translation.modal.counterparty}</span>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder={translation.modal.placeholders.counterparty}
+                  value={draft.counterparty}
+                  onChange={(event) => updateDraft("counterparty", event.target.value)}
+                />
+              </label>
 
-                <label>
-                  <span className="field-label">{translation.modal.location}</span>
-                  <input
-                    className="field-input"
-                    type="text"
-                    placeholder={translation.modal.placeholders.location}
-                    value={draft.location}
-                    onChange={(event) => updateDraft("location", event.target.value)}
-                  />
-                </label>
+              <label>
+                <span className="field-label">{translation.modal.location}</span>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder={translation.modal.placeholders.location}
+                  value={draft.location}
+                  onChange={(event) => updateDraft("location", event.target.value)}
+                />
+              </label>
 
-                <label>
-                  <span className="field-label">{translation.modal.reference}</span>
-                  <input
-                    className="field-input"
-                    type="text"
-                    placeholder={translation.modal.placeholders.reference}
-                    value={draft.reference}
-                    onChange={(event) => updateDraft("reference", event.target.value)}
-                  />
-                </label>
+              <label>
+                <span className="field-label">{translation.modal.reference}</span>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder={translation.modal.placeholders.reference}
+                  value={draft.reference}
+                  onChange={(event) => updateDraft("reference", event.target.value)}
+                />
+              </label>
 
-                <label>
-                  <span className="field-label">{translation.modal.tags}</span>
-                  <input
-                    className="field-input"
-                    type="text"
-                    placeholder={translation.modal.placeholders.tags}
-                    value={draft.tags}
-                    onChange={(event) => updateDraft("tags", event.target.value)}
-                  />
-                  <span className="mt-2 block text-xs text-muted">
-                    {translation.modal.tagsHint}
-                  </span>
-                </label>
+              <label>
+                <span className="field-label">{translation.modal.tags}</span>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder={translation.modal.placeholders.tags}
+                  value={draft.tags}
+                  onChange={(event) => updateDraft("tags", event.target.value)}
+                />
+                <span className="mt-2 block text-xs text-muted">
+                  {translation.modal.tagsHint}
+                </span>
+              </label>
 
-                <label className="block">
-                  <span className="field-label">{translation.modal.note}</span>
-                  <textarea
-                    className="min-h-[158px] w-full rounded-[1.2rem] border border-stroke bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/10"
-                    placeholder={translation.modal.placeholders.note}
-                    value={draft.note}
-                    onChange={(event) => updateDraft("note", event.target.value)}
-                  />
-                </label>
-              </div>
+              <label className="block lg:col-span-2">
+                <span className="field-label">{translation.modal.note}</span>
+                <textarea
+                  className="field-textarea"
+                  placeholder={translation.modal.placeholders.note}
+                  value={draft.note}
+                  onChange={(event) => updateDraft("note", event.target.value)}
+                />
+              </label>
             </div>
           </div>
         </section>
 
-        <aside className="rounded-[2rem] border border-ink/10 bg-[linear-gradient(180deg,rgba(20,33,61,0.98),rgba(29,47,84,0.96))] p-5 text-white shadow-card sm:p-6">
-          <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-white/10 p-3 text-blue-100">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/60">
-                {copy.previewBadge}
-              </p>
-              <h3 className="mt-1 text-xl font-semibold">{copy.previewTitle}</h3>
-            </div>
-          </div>
+        <aside
+          className={cn(
+            "hero-panel p-5 sm:p-6",
+            variant === "panel" ? "2xl:sticky 2xl:top-6 2xl:self-start" : ""
+          )}
+        >
+          <div className="hero-glow -right-10 top-0 h-36 w-36" />
+          <div className="hero-glow left-0 top-1/3 h-32 w-32" />
 
-          <p className="mt-4 text-sm leading-6 text-white/72">
-            {copy.previewDescription}
-          </p>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/55">
-                {copy.projectedBalance}
-              </p>
-              <p className="mt-3 text-2xl font-semibold">
-                {formatCurrency(projectedBalance, language)}
-              </p>
-              <p className="mt-2 text-xs text-white/62">
-                {isIncome ? copy.incomeFlow : copy.expenseFlow}
-              </p>
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-white/10 p-3 text-white/85">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-white/60">
+                  {copy.previewBadge}
+                </p>
+                <h3 className="mt-1 text-xl font-semibold">{copy.previewTitle}</h3>
+              </div>
             </div>
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/55">
-                {copy.currentImpact}
-              </p>
-              <p
-                className={`mt-3 text-2xl font-semibold ${
-                  isIncome ? "text-emerald-300" : "text-rose-300"
-                }`}
-              >
-                {isIncome ? "+" : "-"}
+
+            <p className="mt-4 text-sm leading-6 text-white/72">
+              {copy.previewDescription}
+            </p>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 2xl:grid-cols-1">
+              <div className="rounded-[1.4rem] border border-white/10 bg-white/8 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                  {copy.projectedBalance}
+                </p>
+                <p className="mt-3 text-2xl font-semibold">
+                  {formatCurrency(projectedBalance, language)}
+                </p>
+                <p className="mt-2 text-xs text-white/62">
+                  {isIncome ? copy.incomeFlow : copy.expenseFlow}
+                </p>
+              </div>
+
+              <div className="rounded-[1.4rem] border border-white/10 bg-white/8 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                  {copy.currentImpact}
+                </p>
+                <p
+                  className={`mt-3 text-2xl font-semibold ${
+                    isIncome ? "text-income" : "text-expense"
+                  }`}
+                >
+                  {isIncome ? "+" : "-"}
+                  {formatCurrency(hasValidAmount ? parsedAmount : 0, language)}
+                </p>
+                <p className="mt-2 text-xs text-white/62">
+                  {getTransactionTypeLabel(draft.type, language)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-black/10 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                    {copy.draftSummary}
+                  </p>
+                  <h4 className="mt-2 text-lg font-semibold">
+                    {draft.title || translation.modal.placeholders.title}
+                  </h4>
+                </div>
+                <div
+                  className={`rounded-2xl p-3 ${
+                    isIncome
+                      ? "bg-incomeSoft/20 text-income"
+                      : "bg-expenseSoft/20 text-expense"
+                  }`}
+                >
+                  {isIncome ? (
+                    <ArrowUpRight className="h-5 w-5" />
+                  ) : (
+                    <ArrowDownLeft className="h-5 w-5" />
+                  )}
+                </div>
+              </div>
+
+              <p className="mt-4 text-3xl font-semibold tracking-tight">
                 {formatCurrency(hasValidAmount ? parsedAmount : 0, language)}
               </p>
-              <p className="mt-2 text-xs text-white/62">
-                {getTransactionTypeLabel(draft.type, language)}
+
+              <div className="mt-4 grid gap-3 text-sm text-white/82">
+                <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/8 px-4 py-3">
+                  <ReceiptText className="h-4 w-4 text-white/78" />
+                  <span>{getCategoryLabel(draft.category, language)}</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/8 px-4 py-3">
+                  <Landmark className="h-4 w-4 text-white/78" />
+                  <span>{getAccountLabel(draft.account, language)}</span>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/8 px-4 py-3">
+                  <Tags className="h-4 w-4 text-white/78" />
+                  <span>
+                    {draft.tags
+                      ? draft.tags
+                      : getPaymentMethodLabel(draft.paymentMethod, language)}
+                  </span>
+                </div>
+              </div>
+
+              <p className="mt-4 text-xs leading-5 text-white/58">
+                {copy.detailCaption}
               </p>
             </div>
-          </div>
 
-          <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-white/8 p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-white/55">
-                  {copy.draftSummary}
-                </p>
-                <h4 className="mt-2 text-lg font-semibold">
-                  {draft.title || translation.modal.placeholders.title}
-                </h4>
-              </div>
-              <div
-                className={`rounded-2xl p-3 ${
-                  isIncome
-                    ? "bg-emerald-400/15 text-emerald-200"
-                    : "bg-rose-400/15 text-rose-200"
-                }`}
-              >
-                {isIncome ? (
-                  <ArrowUpRight className="h-5 w-5" />
-                ) : (
-                  <ArrowDownLeft className="h-5 w-5" />
-                )}
-              </div>
-            </div>
+            <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-white/8 p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/55">
+                {copy.latestSaved}
+              </p>
 
-            <p className="mt-4 text-3xl font-semibold tracking-tight">
-              {formatCurrency(hasValidAmount ? parsedAmount : 0, language)}
-            </p>
-
-            <div className="mt-4 grid gap-3 text-sm text-white/80">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
-                <ReceiptText className="h-4 w-4 text-blue-200" />
-                <span>{getCategoryLabel(draft.category, language)}</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
-                <Landmark className="h-4 w-4 text-emerald-200" />
-                <span>{getAccountLabel(draft.account, language)}</span>
-              </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
-                <Tags className="h-4 w-4 text-amber-200" />
-                <span>
-                  {draft.tags
-                    ? draft.tags
-                    : getPaymentMethodLabel(draft.paymentMethod, language)}
-                </span>
-              </div>
-            </div>
-
-            <p className="mt-4 text-xs leading-5 text-white/58">
-              {copy.detailCaption}
-            </p>
-          </div>
-
-          <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-black/12 p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-white/55">
-              {copy.latestSaved}
-            </p>
-
-            {latestSaved ? (
-              <div className="mt-4 rounded-[1.4rem] border border-white/8 bg-white/8 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold">{latestSaved.title}</p>
-                    <p className="mt-1 text-sm text-white/65">
-                      {getCategoryLabel(latestSaved.category, language)} •{" "}
-                      {formatDate(latestSaved.date, language)}
+              {latestSaved ? (
+                <div className="mt-4 rounded-[1.35rem] border border-white/8 bg-black/10 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-semibold">{latestSaved.title}</p>
+                      <p className="mt-1 text-sm text-white/65">
+                        {getCategoryLabel(latestSaved.category, language)} •{" "}
+                        {formatDate(latestSaved.date, language)}
+                      </p>
+                    </div>
+                    <p
+                      className={`text-lg font-semibold ${
+                        latestSaved.type === "income"
+                          ? "text-income"
+                          : "text-expense"
+                      }`}
+                    >
+                      {latestSaved.type === "income" ? "+" : "-"}
+                      {formatCurrency(latestSaved.amount, language)}
                     </p>
                   </div>
-                  <p
-                    className={`text-lg font-semibold ${
-                      latestSaved.type === "income"
-                        ? "text-emerald-300"
-                        : "text-rose-300"
-                    }`}
-                  >
-                    {latestSaved.type === "income" ? "+" : "-"}
-                    {formatCurrency(latestSaved.amount, language)}
-                  </p>
-                </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/78">
-                    {getAccountLabel(latestSaved.account, language)}
-                  </span>
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/78">
-                    {getPaymentMethodLabel(latestSaved.paymentMethod, language)}
-                  </span>
-                  {latestSaved.tags.slice(0, 2).map((tag) => (
-                    <span
-                      key={`${latestSaved.id}-${tag}`}
-                      className="rounded-full bg-blue-400/15 px-3 py-1 text-xs font-medium text-blue-100"
-                    >
-                      #{tag}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium text-white/78">
+                      {getAccountLabel(latestSaved.account, language)}
                     </span>
-                  ))}
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium text-white/78">
+                      {getPaymentMethodLabel(latestSaved.paymentMethod, language)}
+                    </span>
+                    {latestSaved.tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={`${latestSaved.id}-${tag}`}
+                        className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs font-medium text-white/78"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className="mt-4 rounded-[1.4rem] border border-dashed border-white/12 bg-white/5 px-4 py-5 text-sm leading-6 text-white/62">
-                {copy.latestSavedEmpty}
-              </p>
-            )}
+              ) : (
+                <p className="mt-4 rounded-[1.35rem] border border-dashed border-white/12 bg-black/10 px-4 py-5 text-sm leading-6 text-white/62">
+                  {copy.latestSavedEmpty}
+                </p>
+              )}
+            </div>
           </div>
         </aside>
       </div>
 
       {errorMessage ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-expense">
+        <div className="rounded-[1.35rem] border border-expense/20 bg-expenseSoft/72 px-4 py-3 text-sm font-medium text-expense">
           {errorMessage}
         </div>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-3 rounded-[1.6rem] border border-white/60 bg-white/85 p-4 shadow-card sm:flex-row sm:items-center sm:justify-end">
+      <div className="panel flex flex-col-reverse gap-3 p-4 sm:flex-row sm:items-center sm:justify-end">
         {onCancel ? (
           <Button variant="ghost" onClick={onCancel}>
             {translation.modal.cancel}

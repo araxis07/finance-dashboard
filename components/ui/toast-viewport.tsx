@@ -33,8 +33,8 @@ export function ToastViewport() {
 
   return (
     <div className="pointer-events-none fixed right-4 top-4 z-[60] animate-fade-up">
-      <div className="flex max-w-sm items-start gap-3 rounded-2xl border border-emerald-200 bg-white/95 px-4 py-3 shadow-card backdrop-blur">
-        <div className="rounded-full bg-emerald-100 p-2 text-income">
+      <div className="flex max-w-sm items-start gap-3 rounded-2xl border border-stroke/70 bg-panel/95 px-4 py-3 shadow-card backdrop-blur">
+        <div className="rounded-full bg-incomeSoft p-2 text-income">
           <CheckCircle2 className="h-5 w-5" />
         </div>
         <div>

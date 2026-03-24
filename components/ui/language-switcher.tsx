@@ -15,9 +15,9 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <div className="pointer-events-auto relative z-20 rounded-2xl border border-stroke bg-white/95 p-1.5 shadow-card backdrop-blur">
+    <div className="control-shell pointer-events-auto relative z-20">
       <div className="flex items-center gap-1">
-        <div className="flex items-center gap-2 px-3 text-sm font-medium text-muted">
+        <div className="hidden items-center gap-2 px-3 text-sm font-medium text-muted sm:flex">
           <Languages className="h-4 w-4" />
           {translation.shell.language}
         </div>
@@ -27,18 +27,18 @@ export function LanguageSwitcher() {
             type="button"
             onClick={() => handleLanguageChange(option.id)}
             className={cn(
-              "rounded-xl px-3 py-2 text-sm font-semibold transition md:min-w-[82px]",
+              "control-button min-w-[46px] sm:min-w-[82px]",
               option.id === language
-                ? "bg-accent text-white shadow-soft"
-                : "text-muted hover:bg-slate-50 hover:text-ink"
+                ? "control-button-active"
+                : "hover:bg-surface hover:text-ink"
             )}
             aria-pressed={option.id === language}
             aria-label={`Switch language to ${option.nativeLabel}`}
           >
-            <span className="mr-1 text-[11px] uppercase opacity-70">
+            <span className="text-[11px] uppercase opacity-70">
               {option.shortLabel}
             </span>
-            <span>{option.nativeLabel}</span>
+            <span className="hidden sm:inline">{option.nativeLabel}</span>
           </button>
         ))}
       </div>

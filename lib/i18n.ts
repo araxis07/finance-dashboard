@@ -29,7 +29,10 @@ const translations = {
         "ไม่มี backend ไม่มีการซิงก์ และไม่มี parser จริงต่อกับภายนอก",
       addTransaction: "เพิ่มรายการ",
       loadSample: "โหลดข้อมูลตัวอย่าง",
-      language: "ภาษา"
+      language: "ภาษา",
+      theme: "ธีม",
+      lightMode: "สว่าง",
+      darkMode: "มืด"
     },
     pages: {
       dashboard: {
@@ -166,7 +169,10 @@ const translations = {
         "No backend, no sync, and no live parsing service attached",
       addTransaction: "Add transaction",
       loadSample: "Load sample data",
-      language: "Language"
+      language: "Language",
+      theme: "Theme",
+      lightMode: "Light",
+      darkMode: "Dark"
     },
     pages: {
       dashboard: {
@@ -303,7 +309,10 @@ const translations = {
         "バックエンド、同期機能、外部パーサー接続はありません",
       addTransaction: "取引を追加",
       loadSample: "サンプルデータ",
-      language: "言語"
+      language: "言語",
+      theme: "テーマ",
+      lightMode: "ライト",
+      darkMode: "ダーク"
     },
     pages: {
       dashboard: {

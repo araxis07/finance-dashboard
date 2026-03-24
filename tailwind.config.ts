@@ -1,5 +1,7 @@
 import type { Config } from "tailwindcss";
 
+const withOpacity = (token: string) => `rgb(var(${token}) / <alpha-value>)`;
+
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -10,22 +12,27 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        page: "#F4F7FB",
-        panel: "#FFFFFF",
-        ink: "#14213D",
-        muted: "#61708F",
-        stroke: "#DCE5F2",
-        accent: "#2563EB",
-        accentSoft: "#DBEAFE",
-        income: "#10B981",
-        expense: "#EF4444",
-        teal: "#14B8A6",
-        amber: "#F59E0B"
+        page: withOpacity("--page"),
+        pageAlt: withOpacity("--page-alt"),
+        panel: withOpacity("--panel"),
+        surface: withOpacity("--surface"),
+        surfaceAlt: withOpacity("--surface-alt"),
+        ink: withOpacity("--ink"),
+        inkSoft: withOpacity("--ink-soft"),
+        muted: withOpacity("--muted"),
+        stroke: withOpacity("--stroke"),
+        accent: withOpacity("--accent"),
+        accentForeground: withOpacity("--accent-foreground"),
+        accentSoft: withOpacity("--accent-soft"),
+        income: withOpacity("--income"),
+        incomeSoft: withOpacity("--income-soft"),
+        expense: withOpacity("--expense"),
+        expenseSoft: withOpacity("--expense-soft")
       },
       boxShadow: {
-        card: "0 24px 60px -30px rgba(15, 23, 42, 0.22)",
-        soft: "0 20px 40px -32px rgba(37, 99, 235, 0.5)",
-        insetGlow: "inset 0 1px 0 rgba(255,255,255,0.75)"
+        card: "var(--shadow-card)",
+        soft: "var(--shadow-soft)",
+        insetGlow: "var(--shadow-inset)"
       },
       borderRadius: {
         "2xl": "1.5rem"
@@ -64,7 +71,7 @@ const config: Config = {
             transform: "translateY(0)"
           },
           "50%": {
-            transform: "translateY(-6px)"
+            transform: "translateY(-4px)"
           }
         }
       },
