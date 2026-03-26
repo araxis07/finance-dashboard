@@ -86,3 +86,49 @@ export interface MockParsedResult {
   note: string;
   transactions: ParsedTransactionPreview[];
 }
+
+export type UploadSourceType = "spreadsheet" | "pdf" | "image";
+
+export type UploadParseWarning =
+  | "manual_review_required"
+  | "no_transactions_detected"
+  | "rows_skipped";
+
+export interface ParsedUploadTransaction extends NewTransaction {
+  balance: number | null;
+  sourceRow: number;
+}
+
+export interface UploadParseSummary {
+  transactionCount: number;
+  incomeCount: number;
+  expenseCount: number;
+  totalIncome: number;
+  totalExpense: number;
+}
+
+export interface UploadParseResult {
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  sourceType: UploadSourceType;
+  parser: "spreadsheet" | "metadata";
+  sheetName: string | null;
+  columns: string[];
+  skippedRows: number;
+  processedAt: string;
+  warnings: UploadParseWarning[];
+  summary: UploadParseSummary;
+  transactions: ParsedUploadTransaction[];
+}
+
+export interface UploadImportRecord {
+  id: string;
+  fileName: string;
+  sourceType: UploadSourceType;
+  importedAt: string;
+  transactionCount: number;
+  totalIncome: number;
+  totalExpense: number;
+  warnings: UploadParseWarning[];
+}

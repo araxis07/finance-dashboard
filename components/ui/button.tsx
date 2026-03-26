@@ -16,6 +16,17 @@ const variantClasses = {
     "border border-stroke/70 bg-panel/90 text-ink shadow-sm hover:-translate-y-0.5 hover:bg-surface"
 };
 
+export function buttonStyles(
+  variant: ButtonProps["variant"] = "primary",
+  className?: string
+) {
+  return cn(
+    "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+    variantClasses[variant],
+    className
+  );
+}
+
 export function Button({
   className,
   variant = "primary",
@@ -25,11 +36,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={cn(
-        "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50",
-        variantClasses[variant],
-        className
-      )}
+      className={buttonStyles(variant, className)}
       {...props}
     />
   );

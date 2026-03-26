@@ -78,6 +78,7 @@ export function ExpenseChartCard({ data }: { data: ExpenseDatum[] }) {
                   <Pie
                     data={data}
                     dataKey="value"
+                    nameKey="categoryId"
                     innerRadius={88}
                     outerRadius={118}
                     paddingAngle={3}

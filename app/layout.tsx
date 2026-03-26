@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { AppPreferencesProvider } from "@/components/providers/app-preferences-provider";
 import { AppShell } from "@/components/layout/app-shell";
-import { PREFERENCES_STORAGE_KEY } from "@/lib/preferences";
+import {
+  LANGUAGE_COOKIE_NAME,
+  PREFERENCES_STORAGE_KEY,
+  THEME_COOKIE_NAME
+} from "@/lib/preferences";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +14,16 @@ export const metadata: Metadata = {
   description: "Local-first personal finance dashboard built with Next.js and Zustand."
 };
 
-const themeInitScript = `
+function normalizeLanguage(value: string | undefined) {
+  return value === "en" || value === "ja" || value === "th" ? value : "th";
+}
+
+function normalizeTheme(value: string | undefined) {
+  return value === "light" || value === "dark" ? value : undefined;
+}
+
+function buildThemeInitScript(initialLanguage: string, initialTheme: string) {
+  return `
 (() => {
   const storageKey = "${PREFERENCES_STORAGE_KEY}";
   const root = document.documentElement;
@@ -17,8 +31,8 @@ const themeInitScript = `
     ? "dark"
     : "light";
 
-  let language = "th";
-  let theme = systemTheme;
+  let language = "${initialLanguage}";
+  let theme = "${initialTheme}" || systemTheme;
 
   try {
     const raw = window.localStorage.getItem(storageKey);
@@ -50,14 +64,27 @@ const themeInitScript = `
   root.classList.toggle("dark", theme === "dark");
 })();
 `;
+}
 
 export default function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const initialLanguage = normalizeLanguage(
+    cookieStore.get(LANGUAGE_COOKIE_NAME)?.value
+  );
+  const initialTheme = normalizeTheme(
+    cookieStore.get(THEME_COOKIE_NAME)?.value
+  );
+  const themeInitScript = buildThemeInitScript(
+    initialLanguage,
+    initialTheme ?? ""
+  );
+
   return (
-    <html lang="th" suppressHydrationWarning>
+    <html lang={initialLanguage} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

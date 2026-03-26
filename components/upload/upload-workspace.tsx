@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
   FileSpreadsheet,
   FileText,
   ImageIcon,
+  Info,
   LoaderCircle,
   ScanSearch,
   ShieldCheck,
   UploadCloud,
-  WandSparkles,
   X
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useI18n } from "@/hooks/use-i18n";
@@ -26,14 +27,15 @@ import {
 } from "@/lib/finance";
 import {
   MAX_UPLOAD_SIZE,
-  mockUploadFile,
+  parseUploadFile,
   validateUploadFile
 } from "@/lib/upload";
-import { formatCurrency, formatDate, formatFileSize } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatFileSize } from "@/lib/utils";
+import { useFinanceStore } from "@/stores/use-finance-store";
 import type { Language } from "@/types/app";
-import type { MockParsedResult } from "@/types/finance";
+import type { UploadParseResult, UploadParseWarning } from "@/types/finance";
 
-type UploadStatus = "idle" | "processing" | "success" | "error";
+type UploadStatus = "idle" | "processing" | "success" | "error" | "imported";
 
 const uploadCopy: Record<
   Language,
@@ -41,141 +43,282 @@ const uploadCopy: Record<
     badge: string;
     title: string;
     description: string;
+    requirements: string;
     privacyTitle: string;
     privacyDescription: string;
     workflowTitle: string;
     workflowDescription: string;
-    resultsTitle: string;
-    resultsDescription: string;
-    requirements: string;
+    dropTitle: string;
+    dropDescription: string;
+    chooseFile: string;
+    sample: string;
     selectedFile: string;
     clearFile: string;
     processingTitle: string;
     processingDescription: string;
     successTitle: string;
     successDescription: string;
+    importedTitle: string;
+    importedDescription: string;
     errorTitle: string;
     invalidType: string;
     invalidSize: string;
     genericError: string;
+    previewTitle: string;
+    previewDescription: string;
+    parsedRows: string;
+    detectedColumns: string;
+    sheetName: string;
+    dateLabel: string;
+    descriptionLabel: string;
+    amountLabel: string;
+    balanceLabel: string;
+    warnings: string;
+    skippedRows: string;
+    importButton: string;
+    openDashboard: string;
+    historyTitle: string;
+    historyDescription: string;
+    historyEmpty: string;
     previewAlt: string;
+    manualReviewTitle: string;
+    manualReviewDescription: string;
   }
 > = {
   th: {
-    badge: "Mock import studio",
-    title: "จัดหน้าอัปโหลดใหม่ให้เห็นขั้นตอนและผลลัพธ์ชัดขึ้น",
+    badge: "Import workspace",
+    title: "อัปโหลด ตรวจสอบ และนำเข้าธุรกรรมจากไฟล์",
     description:
-      "รองรับ statement, spreadsheet และ receipt image พร้อม mock parsing preview ที่จัดลำดับข้อมูลให้อ่านง่ายกว่าเดิม",
-    privacyTitle: "ข้อมูลไม่ออกจากเครื่อง",
+      "สเปรดชีตจะถูกอ่านจริงเพื่อแปลงเป็นรายการธุรกรรม ส่วน PDF และรูปภาพจะถูกตรวจสอบและส่งเข้าคิวตรวจทานแบบ manual",
+    requirements: "รองรับ CSV, XLS, XLSX, PDF, PNG และ JPG ขนาดไม่เกิน 8 MB",
+    privacyTitle: "ตรวจสอบก่อนนำเข้า",
     privacyDescription:
-      "ไฟล์ทั้งหมดใช้เพื่อจำลองการแสดงผลบนหน้าเว็บเท่านั้น ไม่มี backend หรือบริการภายนอกเชื่อมต่ออยู่",
-    workflowTitle: "ลำดับการทำงานชัดเจนขึ้น",
+      "ระบบจะตรวจชนิดไฟล์ ขนาดไฟล์ และโครงสร้างคอลัมน์ก่อนสร้างพรีวิวธุรกรรม",
+    workflowTitle: "ขั้นตอนชัดเจนขึ้น",
     workflowDescription:
-      "เริ่มจากลากไฟล์ เลือกตัวอย่าง หรือดูสรุป metadata ก่อน แล้วค่อยไล่อ่านรายการ parse ด้านล่าง",
-    resultsTitle: "ผลลัพธ์การแปลงข้อมูล",
-    resultsDescription:
-      "ตัวอย่างด้านล่างช่วยให้เห็นว่าแต่ละบรรทัดธุรกรรมจะถูกจัดหมวดและแสดงผลอย่างไร",
-    requirements: "รองรับ PDF, Excel, PNG และ JPG ขนาดไม่เกิน 8 MB",
+      "เลือกไฟล์ ดูคำเตือนและผลลัพธ์ แล้วค่อยกดนำเข้ารายการเข้าสู่แดชบอร์ด",
+    dropTitle: "อัปโหลด statement, ledger หรือ receipt",
+    dropDescription:
+      "ลากไฟล์มาวาง หรือเลือกไฟล์เพื่อดูผลการอ่านข้อมูลและรายการที่พร้อมนำเข้า",
+    chooseFile: "เลือกไฟล์",
+    sample: "ลองตัวอย่าง",
     selectedFile: "ไฟล์ที่เลือก",
     clearFile: "ล้างไฟล์",
-    processingTitle: "กำลังประมวลผลตัวอย่าง",
+    processingTitle: "กำลังประมวลผลไฟล์",
     processingDescription:
-      "กำลังสร้าง mock parsing preview ในเครื่องเพื่อให้เห็นผลลัพธ์ก่อนนำเข้า",
-    successTitle: "พร้อมแสดงตัวอย่างแล้ว",
+      "กำลังตรวจสอบชนิดไฟล์ อ่านข้อมูล และเตรียมพรีวิวรายการธุรกรรม",
+    successTitle: "พร้อมนำเข้าแล้ว",
     successDescription:
-      "ไฟล์ถูกตรวจสอบและแปลงเป็นข้อมูลจำลองเรียบร้อย โดยไม่มีการส่งออกนอกเครื่อง",
+      "ตรวจสอบไฟล์และอ่านข้อมูลสำเร็จแล้ว คุณสามารถตรวจทานก่อนนำเข้าจริงได้",
+    importedTitle: "นำเข้าธุรกรรมสำเร็จ",
+    importedDescription:
+      "รายการที่ตรวจพบถูกเพิ่มเข้าแดชบอร์ดแล้ว และยังย้อนกลับมาตรวจทานไฟล์นี้ได้",
     errorTitle: "อัปโหลดไม่สำเร็จ",
-    invalidType: "กรุณาอัปโหลดไฟล์ PDF, Excel, PNG หรือ JPG เท่านั้น",
+    invalidType: "รองรับเฉพาะ CSV, XLS, XLSX, PDF, PNG และ JPG",
     invalidSize: "ขนาดไฟล์ต้องไม่เกิน 8 MB",
-    genericError: "ไม่สามารถสร้างตัวอย่างจากไฟล์นี้ได้ กรุณาลองใหม่อีกครั้ง",
-    previewAlt: "ตัวอย่างภาพที่อัปโหลด"
+    genericError: "ไม่สามารถประมวลผลไฟล์นี้ได้ กรุณาลองอีกครั้ง",
+    previewTitle: "พรีวิวนำเข้า",
+    previewDescription:
+      "ตรวจสอบคอลัมน์ คำเตือน และธุรกรรมที่ระบบตรวจพบก่อนเพิ่มลงแดชบอร์ด",
+    parsedRows: "รายการที่ตรวจพบ",
+    detectedColumns: "คอลัมน์ที่พบ",
+    sheetName: "ชีตที่ใช้",
+    dateLabel: "วันที่",
+    descriptionLabel: "รายละเอียด",
+    amountLabel: "จำนวนเงิน",
+    balanceLabel: "คงเหลือ",
+    warnings: "คำเตือน",
+    skippedRows: "แถวที่ข้าม",
+    importButton: "นำเข้าธุรกรรม",
+    openDashboard: "เปิดแดชบอร์ด",
+    historyTitle: "ประวัติการนำเข้า",
+    historyDescription: "ไฟล์ที่ถูกนำเข้าจะถูกบันทึกไว้เพื่อย้อนดูได้ง่าย",
+    historyEmpty: "ยังไม่มีประวัติการนำเข้า",
+    previewAlt: "ภาพตัวอย่างไฟล์ที่อัปโหลด",
+    manualReviewTitle: "ต้องตรวจทานแบบ manual",
+    manualReviewDescription:
+      "PDF และรูปภาพผ่านการตรวจสอบแล้ว แต่ยังไม่มี parser เชิงลึกพอจะดึงธุรกรรมอัตโนมัติจากไฟล์นี้"
   },
   en: {
-    badge: "Mock import studio",
-    title: "A redesigned upload flow with clearer steps and results",
+    badge: "Import workspace",
+    title: "Upload, validate, and import transactions from a file",
     description:
-      "Supports statements, spreadsheets, and receipt images with a cleaner mock parsing preview and stronger information hierarchy.",
-    privacyTitle: "Nothing leaves the device",
+      "Spreadsheets are parsed for real into transaction rows, while PDFs and images are validated and routed into a manual-review flow.",
+    requirements: "Supports CSV, XLS, XLSX, PDF, PNG, and JPG files up to 8 MB",
+    privacyTitle: "Validated before import",
     privacyDescription:
-      "Every file is used only to simulate the interface. There is no backend or external parsing service connected here.",
-    workflowTitle: "A clearer sequence",
+      "The system checks file type, size, and column structure before generating an import preview.",
+    workflowTitle: "A clearer workflow",
     workflowDescription:
-      "Drop a file, load a sample, review the metadata summary, and then inspect the parsed transaction cards below.",
-    resultsTitle: "Parsed output preview",
-    resultsDescription:
-      "The result cards below show how each extracted transaction could be categorized and presented before import.",
-    requirements: "Supports PDF, Excel, PNG, and JPG files up to 8 MB",
+      "Select a file, review warnings and detected rows, then import the transactions into the dashboard.",
+    dropTitle: "Upload a statement, ledger, or receipt",
+    dropDescription:
+      "Drop a file here or choose one to inspect the parsed result and import-ready transactions.",
+    chooseFile: "Choose file",
+    sample: "Try sample",
     selectedFile: "Selected file",
     clearFile: "Clear file",
-    processingTitle: "Preparing preview",
+    processingTitle: "Processing file",
     processingDescription:
-      "Generating a mock parsing result locally so you can inspect the import before it is committed.",
-    successTitle: "Preview ready",
+      "Validating the upload, reading its structure, and preparing the transaction preview.",
+    successTitle: "Ready to import",
     successDescription:
-      "The file was validated and converted into a local mock result without leaving this device.",
+      "The file was validated and parsed successfully. Review the preview before importing it.",
+    importedTitle: "Transactions imported",
+    importedDescription:
+      "Detected transactions were added to the dashboard and the import has been recorded.",
     errorTitle: "Upload failed",
-    invalidType: "Upload a PDF, Excel, PNG, or JPG file.",
+    invalidType: "Only CSV, XLS, XLSX, PDF, PNG, and JPG files are supported.",
     invalidSize: "The file must be 8 MB or smaller.",
-    genericError: "We could not build a preview for this file. Please try again.",
-    previewAlt: "Uploaded file preview"
+    genericError: "We could not process this file. Please try again.",
+    previewTitle: "Import preview",
+    previewDescription:
+      "Review detected columns, warnings, and parsed transactions before they reach the dashboard.",
+    parsedRows: "Detected rows",
+    detectedColumns: "Detected columns",
+    sheetName: "Selected sheet",
+    dateLabel: "Date",
+    descriptionLabel: "Description",
+    amountLabel: "Amount",
+    balanceLabel: "Balance",
+    warnings: "Warnings",
+    skippedRows: "Skipped rows",
+    importButton: "Import transactions",
+    openDashboard: "Open dashboard",
+    historyTitle: "Import history",
+    historyDescription: "Imported files are recorded so the latest batches stay visible.",
+    historyEmpty: "No imports recorded yet",
+    previewAlt: "Uploaded file preview",
+    manualReviewTitle: "Manual review required",
+    manualReviewDescription:
+      "PDFs and images are now validated correctly, but this app still needs a deeper extractor to turn them into transactions automatically."
   },
   ja: {
-    badge: "Mock import studio",
-    title: "手順と結果が見やすいアップロード画面へ再設計",
+    badge: "Import workspace",
+    title: "ファイルをアップロードして検証し、取引として取り込む",
     description:
-      "明細書、スプレッドシート、レシート画像に対応し、モック解析プレビューをより読みやすい階層で表示します。",
-    privacyTitle: "データは端末外へ送信されません",
+      "スプレッドシートは実際に解析して取引行へ変換し、PDF と画像は検証後に手動確認フローへ回します。",
+    requirements: "CSV、XLS、XLSX、PDF、PNG、JPG に対応し、最大サイズは 8 MB です",
+    privacyTitle: "取り込み前に検証",
     privacyDescription:
-      "ファイルはUI表示のシミュレーションにのみ使用され、バックエンドや外部解析サービスには送信されません。",
-    workflowTitle: "流れが明確な構成",
+      "プレビューを生成する前に、ファイル種別、サイズ、列構造を確認します。",
+    workflowTitle: "流れを明確化",
     workflowDescription:
-      "ファイルをドロップするかサンプルを読み込み、メタデータを確認した後、下部の解析結果カードを確認できます。",
-    resultsTitle: "解析結果プレビュー",
-    resultsDescription:
-      "下部のカードで、抽出された各取引がどのように分類・表示されるかを確認できます。",
-    requirements: "PDF、Excel、PNG、JPG に対応し、最大サイズは 8 MB です",
+      "ファイルを選択し、警告と検出行を確認した上で、ダッシュボードへ取り込みます。",
+    dropTitle: "明細、台帳、またはレシートをアップロード",
+    dropDescription:
+      "ここへドロップするかファイルを選択して、解析結果と取り込み候補を確認できます。",
+    chooseFile: "ファイルを選択",
+    sample: "サンプルを試す",
     selectedFile: "選択中のファイル",
     clearFile: "ファイルをクリア",
-    processingTitle: "プレビューを生成中",
+    processingTitle: "ファイルを処理中",
     processingDescription:
-      "取り込み前の見え方を確認できるよう、端末内でモック解析結果を作成しています。",
-    successTitle: "プレビューの準備ができました",
+      "アップロードを検証し、構造を読み取り、取引プレビューを準備しています。",
+    successTitle: "取り込み準備完了",
     successDescription:
-      "ファイルは端末内で検証され、外部送信なしでモック結果へ変換されました。",
+      "ファイルの検証と解析が完了しました。取り込む前にプレビューを確認できます。",
+    importedTitle: "取引を取り込みました",
+    importedDescription:
+      "検出された取引をダッシュボードへ追加し、この取り込み履歴も保存しました。",
     errorTitle: "アップロードに失敗しました",
-    invalidType: "PDF、Excel、PNG、JPG ファイルを選択してください。",
+    invalidType: "CSV、XLS、XLSX、PDF、PNG、JPG のみ対応しています。",
     invalidSize: "ファイルサイズは 8 MB 以下にしてください。",
-    genericError: "このファイルのプレビューを生成できませんでした。もう一度お試しください。",
-    previewAlt: "アップロードした画像のプレビュー"
+    genericError: "このファイルを処理できませんでした。もう一度お試しください。",
+    previewTitle: "取り込みプレビュー",
+    previewDescription:
+      "ダッシュボードへ反映する前に、検出列、警告、取引行を確認できます。",
+    parsedRows: "検出行数",
+    detectedColumns: "検出列",
+    sheetName: "対象シート",
+    dateLabel: "日付",
+    descriptionLabel: "詳細",
+    amountLabel: "金額",
+    balanceLabel: "残高",
+    warnings: "警告",
+    skippedRows: "スキップ行",
+    importButton: "取引を取り込む",
+    openDashboard: "ダッシュボードを開く",
+    historyTitle: "取り込み履歴",
+    historyDescription: "取り込んだファイルは履歴として残り、直近のバッチを確認できます。",
+    historyEmpty: "取り込み履歴はまだありません",
+    previewAlt: "アップロードしたファイルのプレビュー",
+    manualReviewTitle: "手動確認が必要です",
+    manualReviewDescription:
+      "PDF と画像は正しく検証されますが、このアプリではまだ自動抽出用の深いパーサーが不足しています。"
   }
 };
 
-function getFileIcon(type: string) {
-  if (type === "application/pdf") {
+function getFileIcon(type: string, fileName: string) {
+  const normalizedName = fileName.toLowerCase();
+
+  if (type === "application/pdf" || normalizedName.endsWith(".pdf")) {
     return FileText;
   }
 
-  if (type.includes("sheet") || type.includes("excel")) {
+  if (
+    type.includes("sheet") ||
+    type.includes("excel") ||
+    type === "text/csv" ||
+    normalizedName.endsWith(".csv")
+  ) {
     return FileSpreadsheet;
   }
 
   return ImageIcon;
 }
 
+function buildSampleFile() {
+  const sampleCsv = [
+    "date,type,category,description,amount,balance,counterparty,note",
+    "2026-03-24,income,salary,Monthly salary,52000,52000,Employer,Payroll transfer",
+    "2026-03-25,expense,housing,Apartment rent,18500,33500,Landlord,March payment",
+    "2026-03-26,expense,groceries,Weekly groceries,1680,31820,Supermarket,Home essentials"
+  ].join("\n");
+
+  return new File([sampleCsv], "sample-transactions.csv", {
+    type: "text/csv"
+  });
+}
+
+function getWarningLabel(language: Language, warning: UploadParseWarning) {
+  const map: Record<Language, Record<UploadParseWarning, string>> = {
+    th: {
+      manual_review_required: "ไฟล์ชนิดนี้ต้องตรวจทานแบบ manual",
+      no_transactions_detected: "ไม่พบธุรกรรมที่พร้อมนำเข้า",
+      rows_skipped: "มีบางแถวถูกข้ามเพราะข้อมูลไม่ครบหรือไม่ชัดเจน"
+    },
+    en: {
+      manual_review_required: "This file type currently requires manual review",
+      no_transactions_detected: "No import-ready transactions were detected",
+      rows_skipped: "Some rows were skipped because the data was incomplete or unclear"
+    },
+    ja: {
+      manual_review_required: "このファイル種別は現在手動確認が必要です",
+      no_transactions_detected: "取り込み可能な取引が見つかりませんでした",
+      rows_skipped: "不完全または不明瞭な行が一部スキップされました"
+    }
+  };
+
+  return map[language][warning];
+}
+
 export function UploadWorkspace() {
-  const { language, translation } = useI18n();
+  const { language } = useI18n();
+  const imports = useFinanceStore((state) => state.imports);
+  const importTransactions = useFinanceStore((state) => state.importTransactions);
   const copy = uploadCopy[language];
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [parsedResult, setParsedResult] = useState<MockParsedResult | null>(null);
+  const [uploadResult, setUploadResult] = useState<UploadParseResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
 
   const FileIcon = useMemo(
-    () => getFileIcon(file?.type ?? "image/png"),
-    [file?.type]
+    () => getFileIcon(file?.type ?? "", file?.name ?? ""),
+    [file?.name, file?.type]
   );
 
   useEffect(() => {
@@ -192,43 +335,50 @@ export function UploadWorkspace() {
 
   useEffect(() => {
     if (!file) {
-      setParsedResult(null);
+      setUploadResult(null);
       return;
     }
 
     let cancelled = false;
-
-    setParsedResult(null);
     setUploadStatus("processing");
     setUploadError("");
+    setUploadResult(null);
 
-    void mockUploadFile(file, language)
+    void parseUploadFile(file)
       .then((result) => {
         if (cancelled) {
           return;
         }
 
-        setParsedResult(result);
+        setUploadResult(result);
         setUploadStatus("success");
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) {
           return;
         }
 
-        setParsedResult(null);
+        const errorCode =
+          error instanceof Error && error.message ? error.message : "parse_failed";
+
         setUploadStatus("error");
-        setUploadError(copy.genericError);
+        setUploadError(
+          errorCode === "file_size"
+            ? copy.invalidSize
+            : errorCode === "file_type"
+              ? copy.invalidType
+              : copy.genericError
+        );
       });
 
     return () => {
       cancelled = true;
     };
-  }, [copy.genericError, file, language]);
+  }, [copy.genericError, copy.invalidSize, copy.invalidType, file]);
 
   function resetUpload() {
     setFile(null);
-    setParsedResult(null);
+    setUploadResult(null);
     setPreviewUrl(null);
     setUploadError("");
     setUploadStatus("idle");
@@ -247,29 +397,31 @@ export function UploadWorkspace() {
 
     if (validationIssue) {
       setFile(null);
-      setParsedResult(null);
+      setUploadResult(null);
       setPreviewUrl(null);
       setUploadStatus("error");
       setUploadError(
-        validationIssue === "file_size" ? copy.invalidSize : copy.invalidType
+        validationIssue === "file_size"
+          ? copy.invalidSize
+          : validationIssue === "file_type"
+            ? copy.invalidType
+            : copy.genericError
       );
       return;
     }
 
     setUploadError("");
+    setUploadStatus("idle");
     setFile(nextFile);
   }
 
-  function loadSamplePreview() {
-    const sampleFile = new File(
-      [new Uint8Array(2048)],
-      "sample-statement.pdf",
-      {
-        type: "application/pdf"
-      }
-    );
+  function handleImport() {
+    if (!uploadResult || uploadResult.transactions.length === 0) {
+      return;
+    }
 
-    handleFileSelection(sampleFile);
+    importTransactions(uploadResult.transactions, uploadResult);
+    setUploadStatus("imported");
   }
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
@@ -295,15 +447,23 @@ export function UploadWorkspace() {
             title: copy.successTitle,
             toneClassName: "bg-incomeSoft text-income"
           }
-        : uploadStatus === "error"
+        : uploadStatus === "imported"
           ? {
-              description: uploadError || copy.genericError,
-              icon: AlertTriangle,
+              description: copy.importedDescription,
+              icon: CheckCircle2,
               iconClassName: "",
-              title: copy.errorTitle,
-              toneClassName: "bg-expenseSoft text-expense"
+              title: copy.importedTitle,
+              toneClassName: "bg-incomeSoft text-income"
             }
-          : null;
+          : uploadStatus === "error"
+            ? {
+                description: uploadError || copy.genericError,
+                icon: AlertTriangle,
+                iconClassName: "",
+                title: copy.errorTitle,
+                toneClassName: "bg-expenseSoft text-expense"
+              }
+            : null;
 
   return (
     <div className="space-y-5">
@@ -324,7 +484,7 @@ export function UploadWorkspace() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2">
-              {["PDF", "Excel", "PNG/JPG"].map((type) => (
+              {["CSV", "XLSX", "PDF", "PNG/JPG"].map((type) => (
                 <span
                   key={type}
                   className="rounded-full border border-white/12 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/78"
@@ -353,7 +513,7 @@ export function UploadWorkspace() {
             <div className="rounded-[1.5rem] border border-white/10 bg-white/8 p-5">
               <div className="flex items-center gap-3">
                 <div className="rounded-2xl bg-white/10 p-3 text-white/85">
-                  <WandSparkles className="h-5 w-5" />
+                  <ScanSearch className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold">{copy.workflowTitle}</p>
@@ -370,14 +530,13 @@ export function UploadWorkspace() {
       <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.04fr)_minmax(320px,0.96fr)]">
         <Card>
           <CardContent className="p-6">
-            <div className="badge-pill w-fit">{translation.upload.title}</div>
-
             <div
-              className={`mt-5 rounded-[1.8rem] border-2 border-dashed px-6 py-10 text-center transition ${
+              className={cn(
+                "rounded-[1.8rem] border-2 border-dashed px-6 py-10 text-center transition",
                 isDragging
                   ? "border-accent/30 bg-accentSoft"
                   : "border-stroke/70 bg-surface/72"
-              }`}
+              )}
               onDragEnter={(event) => {
                 event.preventDefault();
                 setIsDragging(true);
@@ -394,18 +553,18 @@ export function UploadWorkspace() {
                   <UploadCloud className="h-10 w-10" />
                 </div>
                 <h3 className="mt-6 break-words text-2xl font-semibold text-ink">
-                  {translation.upload.dropTitle}
+                  {copy.dropTitle}
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-muted">
-                  {translation.upload.dropDescription}
+                  {copy.dropDescription}
                 </p>
 
                 <div className="mt-8 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                   <Button onClick={() => inputRef.current?.click()}>
-                    {translation.upload.chooseFile}
+                    {copy.chooseFile}
                   </Button>
-                  <Button variant="secondary" onClick={loadSamplePreview}>
-                    {translation.upload.sample}
+                  <Button variant="secondary" onClick={() => handleFileSelection(buildSampleFile())}>
+                    {copy.sample}
                   </Button>
                 </div>
 
@@ -416,7 +575,7 @@ export function UploadWorkspace() {
                 ref={inputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg"
+                accept=".csv,.xls,.xlsx,.pdf,.png,.jpg,.jpeg"
                 onChange={(event) => {
                   handleFileSelection(event.target.files?.[0] ?? null);
                   event.currentTarget.value = "";
@@ -453,9 +612,9 @@ export function UploadWorkspace() {
                 role="status"
               >
                 <div className="flex items-start gap-3">
-                  <div className={`rounded-2xl p-3 ${statusMeta.toneClassName}`}>
+                  <div className={cn("rounded-2xl p-3", statusMeta.toneClassName)}>
                     <statusMeta.icon
-                      className={`h-5 w-5 ${statusMeta.iconClassName}`}
+                      className={cn("h-5 w-5", statusMeta.iconClassName)}
                     />
                   </div>
                   <div className="min-w-0">
@@ -474,14 +633,14 @@ export function UploadWorkspace() {
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="rounded-2xl bg-accentSoft p-3 text-ink">
-                <ScanSearch className="h-5 w-5" />
+                <Info className="h-5 w-5" />
               </div>
               <div className="min-w-0">
                 <p className="text-xs uppercase tracking-[0.2em] text-muted">
-                  {translation.upload.previewTitle}
+                  {copy.previewTitle}
                 </p>
                 <h3 className="mt-1 break-words text-xl font-semibold text-ink">
-                  {translation.upload.previewDescription}
+                  {copy.previewDescription}
                 </h3>
               </div>
             </div>
@@ -490,13 +649,13 @@ export function UploadWorkspace() {
               <div className="mt-6">
                 <EmptyState
                   icon={ScanSearch}
-                  title={translation.upload.emptyTitle}
-                  description={translation.upload.emptyDescription}
-                  className="min-h-[340px]"
+                  title={copy.historyTitle}
+                  description={copy.historyDescription}
+                  className="min-h-[320px]"
                 />
               </div>
             ) : uploadStatus === "processing" ? (
-              <div className="mt-6 flex min-h-[340px] items-center justify-center rounded-[1.6rem] border border-stroke/70 bg-surface/72 p-6">
+              <div className="mt-6 flex min-h-[320px] items-center justify-center rounded-[1.6rem] border border-stroke/70 bg-surface/72 p-6">
                 <div className="max-w-sm text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-accentSoft text-ink">
                     <LoaderCircle className="h-6 w-6 animate-spin" />
@@ -509,39 +668,47 @@ export function UploadWorkspace() {
                   </p>
                 </div>
               </div>
-            ) : !parsedResult ? (
+            ) : !uploadResult ? (
               <div className="mt-6">
                 <EmptyState
                   icon={AlertTriangle}
                   title={copy.errorTitle}
                   description={uploadError || copy.genericError}
-                  className="min-h-[340px]"
+                  className="min-h-[320px]"
                 />
               </div>
             ) : (
-              <div className="mt-6 space-y-5">
-                <div className="rounded-[1.6rem] border border-stroke/70 bg-surface/72 p-5">
+              <div className="mt-6 space-y-4">
+                <div className="rounded-[1.5rem] border border-stroke/70 bg-surface/72 p-5">
                   <div className="flex items-start gap-4">
                     <div className="rounded-2xl bg-panel p-3 text-accent shadow-sm">
                       <FileIcon className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                        <div className="min-w-0">
-                          <p className="break-all font-semibold text-ink">
-                            {file.name}
+                      <p className="break-all font-semibold text-ink">
+                        {uploadResult.fileName}
+                      </p>
+                      <p className="mt-1 text-sm text-muted">
+                        {formatFileSize(uploadResult.fileSize)} • {uploadResult.sourceType}
+                      </p>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="stat-tile bg-panel/92">
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted">
+                            {copy.parsedRows}
                           </p>
-                          <p className="mt-1 text-sm text-muted">
-                            {formatFileSize(file.size)} • {parsedResult.sourceLabel}
+                          <p className="mt-2 text-2xl font-semibold text-ink">
+                            {uploadResult.summary.transactionCount}
                           </p>
                         </div>
-                        <span className="rounded-full bg-incomeSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-income">
-                          {translation.upload.confidence} {parsedResult.confidence}
-                        </span>
+                        <div className="stat-tile bg-panel/92">
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted">
+                            {copy.sheetName}
+                          </p>
+                          <p className="mt-2 break-words text-sm font-semibold text-ink">
+                            {uploadResult.sheetName ?? copy.manualReviewTitle}
+                          </p>
+                        </div>
                       </div>
-                      <p className="mt-3 text-sm leading-6 text-muted">
-                        {parsedResult.note}
-                      </p>
                     </div>
                   </div>
 
@@ -557,80 +724,203 @@ export function UploadWorkspace() {
                   ) : null}
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="stat-tile bg-panel/92">
+                <div className="grid gap-3">
+                  <div className="rounded-[1.4rem] border border-stroke/70 bg-surface/72 p-4">
                     <p className="text-xs uppercase tracking-[0.18em] text-muted">
-                      {translation.upload.mockResult}
+                      {copy.detectedColumns}
                     </p>
-                    <p className="mt-2 text-2xl font-semibold text-ink">
-                      {parsedResult.transactions.length}
-                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {uploadResult.columns.length > 0 ? (
+                        uploadResult.columns.map((column) => (
+                          <span
+                            key={column}
+                            className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted"
+                          >
+                            {column}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted">
+                          {copy.manualReviewDescription}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="stat-tile bg-panel/92">
+
+                  <div className="rounded-[1.4rem] border border-stroke/70 bg-surface/72 p-4">
                     <p className="text-xs uppercase tracking-[0.18em] text-muted">
-                      {translation.upload.detailLine}
+                      {copy.warnings}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-muted">
-                      {copy.workflowDescription}
-                    </p>
+                    <div className="mt-3 space-y-2">
+                      {uploadResult.warnings.length > 0 ? (
+                        uploadResult.warnings.map((warning) => (
+                          <div
+                            key={warning}
+                            className="rounded-2xl bg-panel/92 px-4 py-3 text-sm text-muted"
+                          >
+                            {getWarningLabel(language, warning)}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl bg-panel/92 px-4 py-3 text-sm text-muted">
+                          {copy.successDescription}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {uploadResult.transactions.length > 0 ? (
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button onClick={handleImport}>
+                      {copy.importButton} ({uploadResult.transactions.length})
+                    </Button>
+                    <Link href="/" className={buttonStyles("secondary")}>
+                      {copy.openDashboard}
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="rounded-[1.4rem] border border-stroke/70 bg-surface/72 px-4 py-4">
+                    <p className="font-semibold text-ink">{copy.manualReviewTitle}</p>
+                    <p className="mt-2 text-sm leading-6 text-muted">
+                      {copy.manualReviewDescription}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div className="min-w-0">
-              <div className="badge-pill">{copy.resultsTitle}</div>
-              <h3 className="mt-4 break-words text-2xl font-semibold tracking-tight text-ink">
-                {translation.upload.previewTitle}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                {copy.resultsDescription}
-              </p>
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.06fr)_minmax(320px,0.94fr)]">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div className="min-w-0">
+                <div className="badge-pill">{copy.previewTitle}</div>
+                <h3 className="mt-4 break-words text-2xl font-semibold tracking-tight text-ink">
+                  {copy.previewDescription}
+                </h3>
+              </div>
             </div>
-          </div>
 
-          {!file ? (
-            <EmptyState
-              icon={ScanSearch}
-              title={translation.upload.emptyTitle}
-              description={translation.upload.emptyDescription}
-              className="mt-6 min-h-[280px]"
-            />
-          ) : uploadStatus === "processing" ? (
-            <div className="mt-6 rounded-[1.5rem] border border-stroke/70 bg-surface/72 px-5 py-10 text-center">
-              <LoaderCircle className="mx-auto h-8 w-8 animate-spin text-ink" />
-              <p className="mt-4 font-semibold text-ink">{copy.processingTitle}</p>
-              <p className="mt-2 text-sm text-muted">{copy.processingDescription}</p>
-            </div>
-          ) : !parsedResult ? (
-            <EmptyState
-              icon={AlertTriangle}
-              title={copy.errorTitle}
-              description={uploadError || copy.genericError}
-              className="mt-6 min-h-[280px]"
-            />
-          ) : (
-            <div className="mt-6 grid gap-4 xl:grid-cols-2">
-              {parsedResult.transactions.map((transaction, index) => (
-                <div
-                  key={`${transaction.title}-${index}`}
-                  className="rounded-[1.5rem] border border-stroke/70 bg-surface/72 px-5 py-5 transition hover:-translate-y-0.5 hover:bg-panel"
-                >
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="min-w-0">
-                      <p className="break-words font-semibold text-ink">
-                        {transaction.title}
-                      </p>
-                      <p className="mt-1 text-sm text-muted">
-                        {formatDate(transaction.date, language)} •{" "}
-                        {getCategoryLabel(transaction.category, language)}
-                      </p>
+            {!uploadResult ? (
+              <EmptyState
+                icon={ScanSearch}
+                title={copy.previewTitle}
+                description={copy.previewDescription}
+                className="mt-6 min-h-[280px]"
+              />
+            ) : uploadResult.transactions.length === 0 ? (
+              <EmptyState
+                icon={AlertTriangle}
+                title={copy.manualReviewTitle}
+                description={copy.manualReviewDescription}
+                className="mt-6 min-h-[280px]"
+              />
+            ) : (
+              <>
+                <div className="mt-6 hidden overflow-hidden rounded-[1.5rem] border border-stroke/70 lg:block">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-surface/86">
+                      <tr className="text-left text-xs uppercase tracking-[0.18em] text-muted">
+                        <th className="px-5 py-4 font-semibold">{copy.dateLabel}</th>
+                        <th className="px-5 py-4 font-semibold">{copy.descriptionLabel}</th>
+                        <th className="px-5 py-4 font-semibold">{copy.detectedColumns}</th>
+                        <th className="px-5 py-4 font-semibold text-right">{copy.amountLabel}</th>
+                        <th className="px-5 py-4 font-semibold text-right">{copy.balanceLabel}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {uploadResult.transactions.map((transaction) => (
+                        <tr key={`${transaction.sourceRow}-${transaction.title}`} className="border-t border-stroke/60 bg-panel/88">
+                          <td className="px-5 py-4 text-sm text-muted">
+                            {formatDate(transaction.date, language)}
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-ink">{transaction.title}</p>
+                              <p className="text-sm text-muted">
+                                {transaction.counterparty || transaction.note || "-"}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-muted">
+                            {getCategoryLabel(transaction.category, language)}
+                          </td>
+                          <td
+                            className={cn(
+                              "px-5 py-4 text-right text-sm font-semibold",
+                              transaction.type === "income" ? "text-income" : "text-expense"
+                            )}
+                          >
+                            {transaction.type === "income" ? "+" : "-"}
+                            {formatCurrency(transaction.amount, language)}
+                          </td>
+                          <td className="px-5 py-4 text-right text-sm font-semibold text-ink">
+                            {transaction.balance == null
+                              ? "-"
+                              : formatCurrency(transaction.balance, language)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-6 grid gap-3 lg:hidden">
+                  {uploadResult.transactions.map((transaction) => (
+                    <div
+                      key={`${transaction.sourceRow}-${transaction.title}`}
+                      className="rounded-[1.4rem] border border-stroke/70 bg-surface/78 px-4 py-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-ink">{transaction.title}</p>
+                          <p className="mt-1 text-sm text-muted">
+                            {formatDate(transaction.date, language)} •{" "}
+                            {getCategoryLabel(transaction.category, language)}
+                          </p>
+                        </div>
+                        <span
+                          className={cn(
+                            "rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]",
+                            transaction.type === "income"
+                              ? "bg-incomeSoft text-income"
+                              : "bg-expenseSoft text-expense"
+                          )}
+                        >
+                          {getTransactionTypeLabel(transaction.type, language)}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted">
+                            {copy.amountLabel}
+                          </p>
+                          <p
+                            className={cn(
+                              "mt-1 font-semibold",
+                              transaction.type === "income" ? "text-income" : "text-expense"
+                            )}
+                          >
+                            {transaction.type === "income" ? "+" : "-"}
+                            {formatCurrency(transaction.amount, language)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted">
+                            {copy.balanceLabel}
+                          </p>
+                          <p className="mt-1 font-semibold text-ink">
+                            {transaction.balance == null
+                              ? "-"
+                              : formatCurrency(transaction.balance, language)}
+                          </p>
+                        </div>
+                      </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
                         <span className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted">
@@ -639,35 +929,74 @@ export function UploadWorkspace() {
                         <span className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted">
                           {getPaymentMethodLabel(transaction.paymentMethod, language)}
                         </span>
-                        <span className="rounded-full border border-stroke/70 bg-panel/90 px-3 py-1 text-xs font-medium text-muted">
-                          {transaction.counterparty}
-                        </span>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-                    <div className="md:max-w-[190px] md:text-right">
-                      <p
-                        className={`break-words text-lg font-semibold ${
-                          transaction.type === "income"
-                            ? "text-income"
-                            : "text-expense"
-                        }`}
-                      >
-                        {transaction.type === "income" ? "+" : "-"}
-                        {formatCurrency(transaction.amount, language)}
-                      </p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted">
-                        {getTransactionTypeLabel(transaction.type, language)} •{" "}
-                        {translation.upload.mockResult}
-                      </p>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-accentSoft p-3 text-ink">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted">
+                  {copy.historyTitle}
+                </p>
+                <h3 className="mt-1 break-words text-xl font-semibold text-ink">
+                  {copy.historyDescription}
+                </h3>
+              </div>
+            </div>
+
+            {imports.length === 0 ? (
+              <EmptyState
+                icon={ShieldCheck}
+                title={copy.historyTitle}
+                description={copy.historyEmpty}
+                className="mt-6 min-h-[280px]"
+              />
+            ) : (
+              <div className="mt-6 space-y-3">
+                {imports.map((record) => (
+                  <div
+                    key={record.id}
+                    className="rounded-[1.4rem] border border-stroke/70 bg-surface/72 px-4 py-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="break-all font-semibold text-ink">
+                          {record.fileName}
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          {formatDate(record.importedAt, language)} • {record.sourceType}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-incomeSoft px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-income">
+                        {record.transactionCount}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-2xl bg-panel/92 px-4 py-3 text-sm text-muted">
+                        {formatCurrency(record.totalIncome, language)}
+                      </div>
+                      <div className="rounded-2xl bg-panel/92 px-4 py-3 text-sm text-muted">
+                        {formatCurrency(record.totalExpense, language)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

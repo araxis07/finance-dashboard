@@ -10,7 +10,13 @@ import {
   normalizePaymentMethodId
 } from "@/lib/finance";
 import type { Language } from "@/types/app";
-import type { NewTransaction, Transaction } from "@/types/finance";
+import type {
+  NewTransaction,
+  ParsedUploadTransaction,
+  Transaction,
+  UploadImportRecord,
+  UploadParseResult
+} from "@/types/finance";
 
 interface ToastPayload {
   id: number;
@@ -20,16 +26,25 @@ interface ToastPayload {
 
 interface FinanceStore {
   transactions: Transaction[];
+  imports: UploadImportRecord[];
   isAddTransactionOpen: boolean;
   toast: ToastPayload | null;
   openAddTransaction: () => void;
   closeAddTransaction: () => void;
   addTransaction: (transaction: NewTransaction) => void;
+  updateTransaction: (transactionId: string, transaction: NewTransaction) => void;
+  importTransactions: (
+    transactions: ParsedUploadTransaction[],
+    metadata: Pick<
+      UploadParseResult,
+      "fileName" | "sourceType" | "summary" | "warnings" | "processedAt"
+    >
+  ) => void;
   loadStarterTransactions: (language: Language) => void;
   dismissToast: () => void;
 }
 
-function createTransactionId() {
+function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
@@ -92,13 +107,14 @@ function normalizeStoredTransaction(value: unknown): Transaction | null {
     return null;
   }
 
-  const fallbackTitle = normalizeText(transaction.category) || (type === "income" ? "Income" : "Expense");
+  const fallbackTitle =
+    normalizeText(transaction.category) || (type === "income" ? "Income" : "Expense");
 
   return {
     id:
       typeof transaction.id === "string" && transaction.id
         ? transaction.id
-        : createTransactionId(),
+        : createId(),
     title: normalizeText(transaction.title) || fallbackTitle,
     amount,
     type,
@@ -114,9 +130,46 @@ function normalizeStoredTransaction(value: unknown): Transaction | null {
   };
 }
 
+function normalizeImportRecord(value: unknown): UploadImportRecord | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Partial<Record<keyof UploadImportRecord, unknown>>;
+  const sourceType =
+    record.sourceType === "spreadsheet" ||
+    record.sourceType === "pdf" ||
+    record.sourceType === "image"
+      ? record.sourceType
+      : null;
+
+  if (!sourceType) {
+    return null;
+  }
+
+  return {
+    id: typeof record.id === "string" && record.id ? record.id : createId(),
+    fileName: normalizeText(record.fileName) || "Imported file",
+    sourceType,
+    importedAt: normalizeDate(record.importedAt),
+    transactionCount: Math.max(0, Number(record.transactionCount) || 0),
+    totalIncome: Math.max(0, Number(record.totalIncome) || 0),
+    totalExpense: Math.max(0, Number(record.totalExpense) || 0),
+    warnings: Array.isArray(record.warnings)
+      ? record.warnings.filter(
+          (warning): warning is UploadImportRecord["warnings"][number] =>
+            warning === "manual_review_required" ||
+            warning === "no_transactions_detected" ||
+            warning === "rows_skipped"
+        )
+      : []
+  };
+}
+
 function migratePersistedState(persistedState: unknown) {
   const fallback = {
-    transactions: [] as Transaction[]
+    transactions: [] as Transaction[],
+    imports: [] as UploadImportRecord[]
   };
 
   if (!persistedState || typeof persistedState !== "object") {
@@ -136,7 +189,32 @@ function migratePersistedState(persistedState: unknown) {
       ? state.transactions
           .map((transaction) => normalizeStoredTransaction(transaction))
           .filter((transaction): transaction is Transaction => transaction !== null)
-      : fallback.transactions
+      : fallback.transactions,
+    imports: Array.isArray(state.imports)
+      ? state.imports
+          .map((record) => normalizeImportRecord(record))
+          .filter((record): record is UploadImportRecord => record !== null)
+      : fallback.imports
+  };
+}
+
+function normalizeIncomingTransaction(transaction: NewTransaction): NewTransaction {
+  return {
+    title: normalizeText(transaction.title) || "Untitled transaction",
+    amount: Math.max(0, Number(transaction.amount) || 0),
+    type: transaction.type === "income" ? "income" : "expense",
+    category: normalizeCategoryId(transaction.category, transaction.type),
+    date: normalizeDate(transaction.date),
+    account: normalizeAccountId(transaction.account),
+    paymentMethod: normalizePaymentMethodId(
+      transaction.paymentMethod,
+      transaction.type
+    ),
+    counterparty: normalizeText(transaction.counterparty),
+    location: normalizeText(transaction.location),
+    reference: normalizeText(transaction.reference),
+    note: normalizeText(transaction.note),
+    tags: normalizeTags(transaction.tags)
   };
 }
 
@@ -144,32 +222,82 @@ export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set) => ({
       transactions: [],
+      imports: [],
       isAddTransactionOpen: false,
       toast: null,
       openAddTransaction: () => set({ isAddTransactionOpen: true }),
       closeAddTransaction: () => set({ isAddTransactionOpen: false }),
-      addTransaction: (transaction) =>
+      addTransaction: (transaction) => {
+        const normalized = normalizeIncomingTransaction(transaction);
+
         set((state) => ({
           transactions: [
             {
-              ...transaction,
-              id: createTransactionId()
+              ...normalized,
+              id: createId()
             },
             ...state.transactions
           ],
           isAddTransactionOpen: false,
           toast: {
             id: Date.now(),
-            transactionTitle: transaction.title,
-            category: transaction.category
+            transactionTitle: normalized.title,
+            category: normalized.category
           }
-        })),
+        }));
+      },
+      updateTransaction: (transactionId, transaction) => {
+        const normalized = normalizeIncomingTransaction(transaction);
+
+        set((state) => ({
+          transactions: state.transactions.map((item) =>
+            item.id === transactionId ? { ...normalized, id: transactionId } : item
+          ),
+          toast: {
+            id: Date.now(),
+            transactionTitle: normalized.title,
+            category: normalized.category
+          }
+        }));
+      },
+      importTransactions: (transactions, metadata) => {
+        const importedTransactions = transactions
+          .map((transaction) => normalizeIncomingTransaction(transaction))
+          .filter((transaction) => transaction.amount > 0);
+
+        if (importedTransactions.length === 0) {
+          return;
+        }
+
+        set((state) => ({
+          transactions: [
+            ...importedTransactions.map((transaction) => ({
+              ...transaction,
+              id: createId()
+            })),
+            ...state.transactions
+          ],
+          imports: [
+            {
+              id: createId(),
+              fileName: metadata.fileName,
+              sourceType: metadata.sourceType,
+              importedAt: normalizeDate(metadata.processedAt),
+              transactionCount: importedTransactions.length,
+              totalIncome: metadata.summary.totalIncome,
+              totalExpense: metadata.summary.totalExpense,
+              warnings: metadata.warnings
+            },
+            ...state.imports
+          ].slice(0, 12)
+        }));
+      },
       loadStarterTransactions: (language) =>
         set({
           transactions: buildStarterTransactions(normalizeLanguage(language)).map(
             (transaction) => ({
               ...transaction,
-              id: createTransactionId()
+              id: createId()
             })
           ),
           toast: null
@@ -178,7 +306,7 @@ export const useFinanceStore = create<FinanceStore>()(
     }),
     {
       name: "finance-dashboard-store",
-      version: 2,
+      version: 3,
       storage: createBrowserJSONStorage(),
       migrate: (persistedState) => ({
         ...migratePersistedState(persistedState),
@@ -186,7 +314,8 @@ export const useFinanceStore = create<FinanceStore>()(
         toast: null
       }),
       partialize: (state) => ({
-        transactions: state.transactions
+        transactions: state.transactions,
+        imports: state.imports
       })
     }
   )

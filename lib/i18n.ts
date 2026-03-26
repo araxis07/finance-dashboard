@@ -26,7 +26,7 @@ const translations = {
       workspaceLabel: "พื้นที่ทำงานการเงินส่วนบุคคล",
       localStateTitle: "ข้อมูลอยู่ในเครื่อง",
       localStateDescription:
-        "ไม่มี backend ไม่มีการซิงก์ และไม่มี parser จริงต่อกับภายนอก",
+        "ธุรกรรมและค่ากำหนดถูกเก็บไว้ในเครื่อง และไฟล์จะถูกตรวจสอบก่อนนำเข้า",
       addTransaction: "เพิ่มรายการ",
       loadSample: "โหลดข้อมูลตัวอย่าง",
       language: "ภาษา",
@@ -41,7 +41,7 @@ const translations = {
       },
       upload: {
         title: "อัปโหลด",
-        description: "ลากไฟล์มาดูตัวอย่างผลแปลงข้อมูลแบบจำลอง"
+        description: "อัปโหลดไฟล์เพื่อแปลง ตรวจสอบ และนำเข้ารายการธุรกรรม"
       }
     },
     nav: {
@@ -135,10 +135,10 @@ const translations = {
     upload: {
       title: "อัปโหลดแบบลากวาง",
       description:
-        "รองรับ PDF, Excel และรูปภาพ โดยแสดงผล parsing แบบจำลองเท่านั้น",
+        "รองรับ PDF, Excel, CSV และรูปภาพ พร้อมตรวจสอบไฟล์และพรีวิวผลก่อนนำเข้า",
       dropTitle: "อัปโหลด statement หรือ receipt",
       dropDescription:
-        "ลากไฟล์มาวางเพื่อจำลองการอ่านข้อมูล รายละเอียดทั้งหมดเป็น mock และจะไม่ส่งออกไปที่ใด",
+        "ลากไฟล์มาวางเพื่ออ่านข้อมูล ตรวจสอบคอลัมน์ และเตรียมนำเข้าธุรกรรม",
       chooseFile: "เลือกไฟล์",
       sample: "ใช้ตัวอย่าง",
       previewTitle: "ตัวอย่างผลแปลงข้อมูล",
@@ -146,13 +146,13 @@ const translations = {
         "แสดงตัวอย่างว่าข้อมูลที่ดึงออกมาอาจถูกจัดวางอย่างไรก่อนนำเข้า",
       emptyTitle: "ยังไม่มีไฟล์อัปโหลด",
       emptyDescription:
-        "ลากไฟล์เข้ามาเพื่อดูการ์ด preview พร้อมข้อมูลธุรกรรมที่จำลองไว้",
+        "ลากไฟล์เข้ามาเพื่อดูพรีวิวรายการที่พร้อมนำเข้า",
       confidence: "ความมั่นใจ",
       mockResult: "ผลจำลอง",
       detailLine: "รายละเอียดที่ระบบจำลองอ่านได้"
     },
     toast: {
-      title: "บันทึกรายการแล้ว",
+      title: "บันทึกรายการสำเร็จ",
       description: (title: string, category: string) =>
         `รายการ "${title}" ถูกบันทึกไว้ในหมวด ${category}`
     }
@@ -166,7 +166,7 @@ const translations = {
       workspaceLabel: "Personal finance workspace",
       localStateTitle: "Local-only state",
       localStateDescription:
-        "No backend, no sync, and no live parsing service attached",
+        "Transactions and preferences stay on this device, and uploads are validated before import",
       addTransaction: "Add transaction",
       loadSample: "Load sample data",
       language: "Language",
@@ -181,7 +181,7 @@ const translations = {
       },
       upload: {
         title: "Upload",
-        description: "Drop a file to preview mocked parsing results"
+        description: "Upload a file to validate, parse, and import transactions"
       }
     },
     nav: {
@@ -275,10 +275,10 @@ const translations = {
     upload: {
       title: "Drag and drop upload",
       description:
-        "Accepts PDF, Excel, and image files. Parsing is fully mocked for this UI",
+        "Accepts PDF, Excel, CSV, and image files with validation and import preview",
       dropTitle: "Upload a statement or receipt",
       dropDescription:
-        "Drop a file to simulate import parsing. Everything shown here is mocked and never leaves the browser",
+        "Drop a file to inspect columns, validate entries, and prepare transactions for import",
       chooseFile: "Choose file",
       sample: "Use sample",
       previewTitle: "Mock parsed preview",
@@ -286,13 +286,13 @@ const translations = {
         "Shows how extracted fields could be presented before import",
       emptyTitle: "Nothing uploaded yet",
       emptyDescription:
-        "Drop a file to generate a preview card with mocked transaction metadata",
+        "Drop a file to generate an import preview and review detected transactions",
       confidence: "Confidence",
       mockResult: "Mock result",
       detailLine: "Detailed fields identified by the mocked parser"
     },
     toast: {
-      title: "Transaction added",
+      title: "Transaction saved",
       description: (title: string, category: string) =>
         `"${title}" was saved under ${category}`
     }
@@ -306,7 +306,7 @@ const translations = {
       workspaceLabel: "個人ファイナンスワークスペース",
       localStateTitle: "ローカル保存のみ",
       localStateDescription:
-        "バックエンド、同期機能、外部パーサー接続はありません",
+        "取引と設定は端末内に保持され、アップロードファイルは取り込み前に検証されます",
       addTransaction: "取引を追加",
       loadSample: "サンプルデータ",
       language: "言語",
@@ -321,7 +321,7 @@ const translations = {
       },
       upload: {
         title: "アップロード",
-        description: "ファイルをドロップしてモック解析結果を確認します"
+        description: "ファイルをアップロードして検証し、取引として取り込みます"
       }
     },
     nav: {
@@ -414,10 +414,10 @@ const translations = {
     upload: {
       title: "ドラッグ＆ドロップアップロード",
       description:
-        "PDF、Excel、画像に対応し、UI上ではモック解析結果のみを表示します",
+        "PDF、Excel、CSV、画像に対応し、取り込み前に内容を確認できます",
       dropTitle: "明細書またはレシートをアップロード",
       dropDescription:
-        "ファイルをドロップすると取り込み解析をシミュレートします。表示内容はすべてモックで、外部送信はありません",
+        "ファイルをドロップすると列の検出と検証を行い、取り込み前の結果を確認できます",
       chooseFile: "ファイルを選択",
       sample: "サンプルを使う",
       previewTitle: "モック解析プレビュー",
@@ -425,7 +425,7 @@ const translations = {
         "取り込み前に抽出フィールドがどのように表示されるかを確認できます",
       emptyTitle: "まだアップロードされていません",
       emptyDescription:
-        "ファイルをドロップしてモック取引メタデータ付きのプレビューカードを表示します",
+        "ファイルをドロップして、取り込み前の取引プレビューを表示します",
       confidence: "信頼度",
       mockResult: "モック結果",
       detailLine: "モックパーサーが認識した詳細フィールド"

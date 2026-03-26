@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { Languages } from "lucide-react";
 import { useI18n } from "@/hooks/use-i18n";
 import { languageOptions } from "@/lib/i18n";
@@ -7,9 +8,12 @@ import { cn } from "@/lib/utils";
 
 export function LanguageSwitcher() {
   const { language, setLanguage, translation } = useI18n();
+  const [isPending, startTransition] = useTransition();
 
   function handleLanguageChange(nextLanguage: (typeof languageOptions)[number]["id"]) {
-    setLanguage(nextLanguage);
+    startTransition(() => {
+      setLanguage(nextLanguage);
+    });
   }
 
   return (
@@ -30,6 +34,7 @@ export function LanguageSwitcher() {
                 ? "control-button-active"
                 : "hover:bg-surface hover:text-ink"
             )}
+            disabled={isPending}
             aria-pressed={option.id === language}
             aria-label={`Switch language to ${option.nativeLabel}`}
           >

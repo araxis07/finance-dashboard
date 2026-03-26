@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import {
+  LANGUAGE_COOKIE_NAME,
+  THEME_COOKIE_NAME
+} from "@/lib/preferences";
 import { usePreferencesStore } from "@/stores/use-preferences-store";
 
 export function AppPreferencesProvider({
@@ -10,7 +14,6 @@ export function AppPreferencesProvider({
 }) {
   const language = usePreferencesStore((state) => state.language);
   const theme = usePreferencesStore((state) => state.theme);
-  const hasHydrated = usePreferencesStore((state) => state.hasHydrated);
   const didRehydrate = useRef(false);
 
   useEffect(() => {
@@ -28,6 +31,7 @@ export function AppPreferencesProvider({
   useEffect(() => {
     const root = document.documentElement;
     root.lang = language;
+    document.cookie = `${LANGUAGE_COOKIE_NAME}=${language}; path=/; max-age=31536000; SameSite=Lax`;
   }, [language]);
 
   useEffect(() => {
@@ -35,6 +39,7 @@ export function AppPreferencesProvider({
     root.dataset.theme = theme;
     root.style.colorScheme = theme;
     root.classList.toggle("dark", theme === "dark");
+    document.cookie = `${THEME_COOKIE_NAME}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
   }, [theme]);
 
   return <>{children}</>;
