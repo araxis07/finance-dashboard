@@ -40,6 +40,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
+          "Inter",
           "Noto Sans Thai",
           "Noto Sans JP",
           "Avenir Next",
@@ -48,6 +49,7 @@ const config: Config = {
           "sans-serif"
         ],
         display: [
+          "Inter",
           "Noto Sans Thai",
           "Noto Sans JP",
           "Avenir Next",

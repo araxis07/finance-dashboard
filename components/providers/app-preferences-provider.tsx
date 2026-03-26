@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePreferencesStore } from "@/stores/use-preferences-store";
 
 export function AppPreferencesProvider({
@@ -9,29 +9,21 @@ export function AppPreferencesProvider({
   children: React.ReactNode;
 }) {
   const language = usePreferencesStore((state) => state.language);
-  const setHasHydrated = usePreferencesStore((state) => state.setHasHydrated);
   const theme = usePreferencesStore((state) => state.theme);
+  const hasHydrated = usePreferencesStore((state) => state.hasHydrated);
+  const didRehydrate = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
+    if (didRehydrate.current) {
+      return;
+    }
 
-    const rehydratePreferences = async () => {
-      try {
-        await usePreferencesStore.persist.rehydrate();
-      } finally {
-        // Never leave the UI blocked if storage rehydration fails.
-        if (isMounted) {
-          setHasHydrated(true);
-        }
-      }
-    };
+    didRehydrate.current = true;
 
-    void rehydratePreferences();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [setHasHydrated]);
+    // Rehydrate the store from localStorage on mount.
+    // This must happen exactly once, client-side only.
+    void usePreferencesStore.persist.rehydrate();
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
