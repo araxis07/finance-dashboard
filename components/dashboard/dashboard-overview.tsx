@@ -10,6 +10,7 @@ import {
 import { ExpenseChartCard } from "@/components/dashboard/expense-chart-card";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { TransactionTable } from "@/components/dashboard/transaction-table";
+import { TransactionForm } from "@/components/transactions/transaction-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/hooks/use-i18n";
 import { getExpenseChartData, getSummary } from "@/lib/finance";
@@ -177,6 +178,8 @@ export function DashboardOverview() {
         totalIncome={summary.totalIncome}
         totalExpense={summary.totalExpense}
       />
+
+      <TransactionForm mode="create" />
 
       <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
         <ExpenseChartCard data={expenseData} />

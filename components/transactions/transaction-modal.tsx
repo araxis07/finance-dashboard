@@ -115,12 +115,12 @@ export function TransactionModal({
       />
 
       <div className="absolute inset-0 overflow-y-auto px-3 py-4 sm:px-5 sm:py-6">
-        <div className="mx-auto flex min-h-full w-full max-w-[1160px] items-center justify-center">
+        <div className="mx-auto flex min-h-full w-full max-w-[1480px] items-center justify-center">
           <div
             aria-modal="true"
             role="dialog"
             ref={dialogRef}
-            className="panel w-full overflow-hidden"
+            className="panel w-full overflow-hidden p-4 sm:p-5"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="hero-panel p-5 sm:p-6">
@@ -151,7 +151,7 @@ export function TransactionModal({
               </div>
             </div>
 
-            <div className="p-4 sm:p-5">
+            <div className="mt-5">
               <TransactionForm
                 mode={mode}
                 transaction={transaction}
